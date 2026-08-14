@@ -24,3 +24,4 @@
 - [x] Xây dựng máy chủ LAN cùng kho dữ liệu dùng chung bằng SQLite và kiểm thử tự động.
 - [x] Kết nối ứng dụng bán hàng và giao diện web quản lý vào máy chủ LAN.
 - [ ] Kiểm thử nhiều thiết bị trong cùng Wi‑Fi, soạn hướng dẫn cài đặt và lưu phiên bản nâng cấp.
+- [x] Khắc phục lỗi iPhone/Expo Go không kết nối được máy chủ phát triển và xác minh bundle iOS.
