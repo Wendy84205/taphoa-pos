@@ -182,3 +182,13 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Bổ sung báo cáo doanh thu lọc/so sánh theo nhân viên khi WithStaff.
 - [x] Tối ưu mobile cho luồng PIN tại quầy và Web cho quản trị tổng thể.
 - [x] Viết kiểm thử tenant isolation, role guard, storeType gating và PIN login.
+
+## Checklist kiểm thử Web và app
+
+- [x] Chạy TypeScript, lint và toàn bộ unit tests.
+- [x] Chạy smoke test LAN/full-state và kiểm tra server sau restart.
+- [x] Kiểm tra Website các route Tài khoản, Vận hành, Báo cáo, Sản phẩm, Bán hàng và Hóa đơn.
+- [x] Kiểm tra responsive Website desktop/tablet/mobile và trạng thái onboarding.
+- [x] Kiểm tra app contracts cho đăng nhập email/phone/PIN, storeType, role guard và seller attribution.
+- [x] Kiểm tra các luồng backup/restore, nhập hàng, hạn dùng, đóng ca, in file và in hóa đơn/tem giá.
+- [x] Ghi nhận lỗi, sửa hồi quy nếu có và cập nhật checkpoint kiểm thử.
