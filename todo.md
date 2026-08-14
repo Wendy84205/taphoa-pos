@@ -267,3 +267,48 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Chạy regression cuối, cập nhật checklist go-live và tạo checkpoint bàn giao.
 - [x] Kiểm thử mô phỏng tenant A/B cho snapshot access và owner/staff guards.
 - [x] Tạo DEVICE_TEST_EXECUTION_LOG.md và PRODUCTION_MAPPING.md cho bước bàn giao.
+
+## Kiểm thử điện thoại qua server
+
+- [x] Khởi động Web/Expo server và xác nhận điện thoại cùng Wi-Fi truy cập được.
+- [x] Gửi URL/QR và hướng dẫn kiểm thử trên điện thoại.
+
+## Expo Go connectivity
+
+- [x] Kiểm tra và khởi động Metro server đúng cho Expo Go, ưu tiên tunnel/public URL khi điện thoại không cùng mạng.
+- [x] Xác minh QR/URL Metro và hướng dẫn phân biệt Expo Go với Web preview.
+
+## Expo Go manifest fix
+
+- [ ] Ngăn dùng URL Web preview `exp://8081-...manus.computer` trong Expo Go.
+- [ ] Xác minh Metro manifest mobile và cung cấp URL `exp://...exp.direct` hợp lệ cho iPhone.
+
+## Expo Go QR session
+
+- [x] Khởi động Metro Expo và xác minh manifest mobile hợp lệ.
+- [x] Tạo mã QR Expo Go từ URL Metro hợp lệ, không dùng URL Web preview.
+
+## Expo Go manifest retry
+
+- [ ] Kiểm tra lại manifest theo header iOS/Expo và trạng thái tunnel sau lỗi lặp lại.
+- [ ] Không tiếp tục phát QR nếu URL không trả manifest native ổn định.
+- [ ] Chuẩn bị phương án build native/Publish thay cho Expo Go nếu tunnel sandbox không tương thích.
+
+## Direct Expo CLI session
+
+- [x] Chạy trực tiếp `npx expo start` trong project và kiểm tra Metro/QR native.
+
+## Native build fallback
+
+- [ ] Xác minh lại native export hiện có và chuẩn bị hướng dẫn cài build trực tiếp thay cho Expo Go tunnel.
+- [ ] Ghi nhận Expo Go tunnel không phù hợp với sandbox để tránh tiếp tục dùng QR không ổn định.
+
+## Tài liệu bàn giao local
+
+- [x] Tạo file Markdown tổng hợp tính năng đã làm, chưa làm và giới hạn production.
+- [x] Tạo hướng dẫn cài đặt công cụ, chạy Web/API/Expo local và quy trình chỉnh sửa code.
+
+## Git delivery
+
+- [ ] Rà soát diff và loại trừ secret/file tạm trước commit.
+- [ ] Chạy kiểm tra nhanh, commit và push thay đổi local lên GitHub.
