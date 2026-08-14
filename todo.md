@@ -136,5 +136,13 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Kiểm tra landing page responsive desktop/mobile và điều hướng vào POS.
 - [x] Kiểm thử responsive Web desktop/tablet/mobile và các thao tác POS chính.
 - [ ] Chuẩn bị tài liệu biến môi trường và mapping backend cho Vercel/Supabase, chưa public.
+- [x] Thêm khôi phục mật khẩu bằng email/số điện thoại và xác thực OTP SMS.
+- [x] Thêm đổi mật khẩu và cập nhật thông tin liên hệ trong trang Tài khoản.
+- [x] Thêm xuất báo cáo doanh thu và công nợ ra Excel.
+- [x] Thêm xuất báo cáo doanh thu và công nợ ra PDF.
+- [x] Kiểm thử bảo mật OTP, profile và các file xuất trên Web/mobile.
+- [x] Hoàn thiện form quên mật khẩu và trạng thái OTP provider chưa cấu hình.
+- [x] Hoàn thiện đổi mật khẩu và cập nhật email/số điện thoại trong hồ sơ.
+- [x] Hoàn thiện xuất báo cáo/công nợ ra Excel và PDF.
 - [x] Lưu checkpoint Website hoàn thiện và cập nhật GitHub.
 - [x] Lưu checkpoint landing enhancements và cập nhật GitHub.

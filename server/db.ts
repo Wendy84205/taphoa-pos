@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, Store, StoreMember, auditLogs, posSnapshots, storeMembers, stores, users } from "../drizzle/schema";
+import { InsertUser, Store, StoreMember, auditLogs, authChallenges, posSnapshots, storeMembers, stores, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -54,11 +54,50 @@ export async function getUserByPhone(phone: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateUserProfile(id: number, values: { name?: string | null; email?: string | null; phone?: string | null; passwordHash?: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  await db.update(users).set(values).where(eq(users.id, id));
+  return getUserById(id);
+}
+
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createAuthChallenge(input: { userId?: number; identifier: string; channel: "sms" | "email"; purpose: "login_otp" | "reset_password"; codeHash: string; expiresAt: Date }) {
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  await db.insert(authChallenges).values(input);
+}
+
+export async function getLatestAuthChallenge(identifier: string, purpose: "login_otp" | "reset_password") {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(authChallenges).where(and(eq(authChallenges.identifier, identifier), eq(authChallenges.purpose, purpose))).orderBy(desc(authChallenges.id)).limit(1);
+  return rows[0];
+}
+
+export async function consumeAuthChallenge(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  await db.update(authChallenges).set({ consumedAt: new Date() }).where(eq(authChallenges.id, id));
+}
+
+export async function incrementAuthChallengeAttempts(id: number, attempts: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  await db.update(authChallenges).set({ attempts }).where(eq(authChallenges.id, id));
 }
 
 export type Workspace = { store: Store; membership: StoreMember };

@@ -11,9 +11,11 @@ import { hashPassword, normalizeEmail, normalizePhone, credentialsOpenId, valida
 
 const snapshotSchema = z.record(z.string(), z.unknown());
 const credentialSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3), password: z.string().min(8), name: z.string().trim().min(1).max(120).optional() });
+const profileSchema = z.object({ name: z.string().trim().min(1).max(120), email: z.string().trim().email().optional().or(z.literal("")), phone: z.string().trim().optional() });
+const resetIdentifierSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3) });
 
 function publicUser(user: NonNullable<Awaited<ReturnType<typeof db.getUserByOpenId>>>) {
-  return { id: user.id, openId: user.openId, name: user.name, email: user.email, loginMethod: user.loginMethod, lastSignedIn: user.lastSignedIn };
+  return { id: user.id, openId: user.openId, name: user.name, email: user.email, phone: user.phone, loginMethod: user.loginMethod, lastSignedIn: user.lastSignedIn };
 }
 
 async function establishCredentialsSession(ctx: TrpcContext, user: NonNullable<Awaited<ReturnType<typeof db.getUserByOpenId>>>) {
@@ -39,6 +41,41 @@ export const appRouter = router({
       const user = await db.getUserByOpenId(openId);
       if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể tạo tài khoản lúc này." });
       return establishCredentialsSession(ctx, user);
+    }),
+    profile: protectedProcedure.query(async ({ ctx }) => {
+      const user = await db.getUserById(ctx.user.id);
+      if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy hồ sơ tài khoản." });
+      return publicUser(user);
+    }),
+    updateProfile: protectedProcedure.input(profileSchema).mutation(async ({ ctx, input }) => {
+      const email = input.email ? normalizeEmail(input.email) : null;
+      const phone = input.phone ? normalizePhone(input.phone) : null;
+      if (email && !/^\S+@\S+\.\S+$/.test(email)) throw new TRPCError({ code: "BAD_REQUEST", message: "Email chưa đúng định dạng." });
+      if (phone && !validatePhone(phone)) throw new TRPCError({ code: "BAD_REQUEST", message: "Số điện thoại Việt Nam chưa đúng định dạng." });
+      const emailOwner = email ? await db.getUserByEmail(email) : undefined;
+      const phoneOwner = phone ? await db.getUserByPhone(phone) : undefined;
+      if (emailOwner && emailOwner.id !== ctx.user.id) throw new TRPCError({ code: "CONFLICT", message: "Email đã được sử dụng." });
+      if (phoneOwner && phoneOwner.id !== ctx.user.id) throw new TRPCError({ code: "CONFLICT", message: "Số điện thoại đã được sử dụng." });
+      const updated = await db.updateUserProfile(ctx.user.id, { name: input.name.trim(), email, phone });
+      if (!updated) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể cập nhật hồ sơ." });
+      return publicUser(updated);
+    }),
+    changePassword: protectedProcedure.input(z.object({ currentPassword: z.string().min(1), newPassword: z.string().min(8) })).mutation(async ({ ctx, input }) => {
+      const user = await db.getUserById(ctx.user.id);
+      if (!user?.passwordHash || !verifyPassword(input.currentPassword, user.passwordHash)) throw new TRPCError({ code: "UNAUTHORIZED", message: "Mật khẩu hiện tại không đúng." });
+      if (!validatePassword(input.newPassword)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mật khẩu mới cần ít nhất 8 ký tự." });
+      const updated = await db.updateUserProfile(ctx.user.id, { passwordHash: hashPassword(input.newPassword) });
+      if (!updated) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể đổi mật khẩu." });
+      return { success: true } as const;
+    }),
+    requestPasswordReset: publicProcedure.input(resetIdentifierSchema).mutation(async ({ input }) => {
+      const identifier = input.kind === "email" ? normalizeEmail(input.identifier) : normalizePhone(input.identifier);
+      const providerConfigured = Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER);
+      if (!providerConfigured) return { accepted: false, providerConfigured: false, message: "SMS OTP chưa được cấu hình. Vui lòng liên hệ quản trị viên để khôi phục mật khẩu." };
+      return { accepted: false, providerConfigured: true, message: `Đã tiếp nhận yêu cầu cho ${identifier}; cần bật SMS adapter trước khi gửi mã.` };
+    }),
+    verifyPasswordResetOtp: publicProcedure.input(z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3), otp: z.string().regex(/^\d{6}$/), newPassword: z.string().min(8) })).mutation(async () => {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "OTP SMS chưa được cấu hình nên chưa thể xác nhận mã." });
     }),
     credentialsLogin: publicProcedure.input(credentialSchema.omit({ name: true })).mutation(async ({ ctx, input }) => {
       const identifier = input.kind === "email" ? normalizeEmail(input.identifier) : normalizePhone(input.identifier);

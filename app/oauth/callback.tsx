@@ -49,6 +49,7 @@ export default function OAuthCallback() {
                 openId: userData.openId,
                 name: userData.name,
                 email: userData.email,
+                phone: userData.phone ?? null,
                 loginMethod: userData.loginMethod,
                 lastSignedIn: new Date(userData.lastSignedIn || Date.now()),
               };
@@ -200,6 +201,7 @@ export default function OAuthCallback() {
               openId: result.user.openId,
               name: result.user.name,
               email: result.user.email,
+              phone: result.user.phone ?? null,
               loginMethod: result.user.loginMethod,
               lastSignedIn: new Date(result.user.lastSignedIn || Date.now()),
             };

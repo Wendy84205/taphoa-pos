@@ -22,6 +22,13 @@
       "when": 1786722443530,
       "tag": "0002_nebulous_pyro",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1786723261627,
+      "tag": "0003_stormy_hellion",
+      "breakpoints": true
     }
   ]
 }

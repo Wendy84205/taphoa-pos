@@ -60,7 +60,7 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
   }, []);
 
   useEffect(() => {
-    if (pathname === "/gioi-thieu" || pathname === "/bang-gia") return;
+    if (pathname !== "/" && pathname !== "/tra-cuu") return;
     AsyncStorage.getItem(STORAGE_KEY).then((seen) => {
       if (!seen) setVisible(true);
     }).catch(() => setVisible(true));

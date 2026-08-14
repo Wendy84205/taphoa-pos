@@ -17,6 +17,22 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+export const authChallenges = mysqlTable("authChallenges", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  identifier: varchar("identifier", { length: 320 }).notNull(),
+  channel: mysqlEnum("channel", ["sms", "email"]).notNull(),
+  purpose: mysqlEnum("purpose", ["login_otp", "reset_password"]).notNull(),
+  codeHash: text("codeHash").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  attempts: int("attempts").default(0).notNull(),
+  consumedAt: timestamp("consumedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AuthChallenge = typeof authChallenges.$inferSelect;
+export type InsertAuthChallenge = typeof authChallenges.$inferInsert;
+
 /** Một quán/tài khoản kinh doanh độc lập trong hệ thống cloud. */
 export const stores = mysqlTable("stores", {
   id: int("id").autoincrement().primaryKey(),
