@@ -25,3 +25,4 @@
 - [x] Kết nối ứng dụng bán hàng và giao diện web quản lý vào máy chủ LAN.
 - [ ] Kiểm thử nhiều thiết bị trong cùng Wi‑Fi, soạn hướng dẫn cài đặt và lưu phiên bản nâng cấp.
 - [x] Khắc phục lỗi iPhone/Expo Go không kết nối được máy chủ phát triển và xác minh bundle iOS.
+- [x] Khôi phục bản xem trước Web POS và xác minh luồng quản lý sản phẩm.
