@@ -47,6 +47,14 @@ Trong tab **Sản phẩm**, chọn **Nhập** rồi chọn tệp Excel (`.xlsx`,
 
 Nếu một mã vạch đã có, lần nhập mới sẽ cập nhật sản phẩm hiện có thay vì tạo trùng. Khi nhập xong, các mặt hàng có số tồn không vượt ngưỡng cảnh báo sẽ xuất hiện trong khung **Cần nhập thêm hàng** tại trang Tra cứu.
 
+Trong biểu mẫu nhập, chọn **Tải file Excel mẫu** để nhận một bảng `.xlsx` đúng định dạng trước khi điền dữ liệu. Trên điện thoại, hệ thống mở bảng chia sẻ để lưu mẫu; trên Web, tệp được tải xuống trực tiếp.
+
+## Lịch sử kho và cảnh báo tồn thấp
+
+Tại tab **Sản phẩm**, nút biểu tượng đồng hồ mở **Lịch sử kho**. Mỗi dòng thể hiện thời điểm, sản phẩm, loại biến động, số tồn trước/sau và ghi chú. Chạm biểu tượng thanh trượt trên từng sản phẩm để nhập thêm hoặc giảm tồn thủ công; mọi thay đổi, cùng các lần nhập Excel và bán hàng, đều được ghi vào lịch sử.
+
+Ở trang **Tra cứu**, khung **Cần nhập thêm hàng** cho phép lọc theo nhóm hàng. Nút sắp xếp chuyển lần lượt giữa ưu tiên thiếu gấp, số tồn thấp nhất và tên A–Z.
+
 ## Quét mã vạch nhanh
 
 Tại trang **Tra cứu**, chạm nút quét mã màu vàng. Lần đầu, hãy cấp quyền dùng camera; hướng camera vào mã EAN, UPC, Code 128, Code 93, Code 39, ITF-14 hoặc Codabar. Nếu tìm thấy sản phẩm, ứng dụng hiển thị giá và nút **Thêm** để đưa vào giỏ; nếu chưa có, chọn **Tạo nhanh** để lưu sản phẩm với mã vừa quét. Khi camera không đọc được, có thể nhập mã ở ô dự phòng bên dưới khung quét.

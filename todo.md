@@ -31,3 +31,8 @@
 - [x] Bổ sung bảng cảnh báo sản phẩm sắp hết ngay trên trang chủ.
 - [x] Hoàn thiện quét mã vạch bằng camera để tra cứu và thêm nhanh sản phẩm trên các nền tảng hỗ trợ.
 - [x] Kiểm thử nhập Excel, cảnh báo tồn kho và luồng quét mã bằng bộ kiểm thử, TypeScript, lint và cấu hình Expo.
+- [x] Thêm nút tải tệp Excel mẫu ngay trong luồng nhập sản phẩm.
+- [x] Lưu lịch sử nhập hàng và điều chỉnh tồn kho theo từng sản phẩm.
+- [x] Tạo màn xem chi tiết lịch sử kho có thể lọc theo sản phẩm và loại biến động.
+- [x] Thêm bộ lọc và sắp xếp cho danh sách cảnh báo sản phẩm sắp hết trên trang chủ.
+- [x] Kiểm thử nhật ký kho, tải tệp mẫu và bộ lọc cảnh báo tồn thấp.

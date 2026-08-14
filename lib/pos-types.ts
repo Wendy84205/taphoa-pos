@@ -39,6 +39,20 @@ export type Order = {
   totalAmount: number;
 };
 
+export type InventoryActivityType = "import" | "adjustment" | "sale" | "initial" | "update";
+
+export type InventoryActivity = {
+  id: string;
+  productId: string;
+  productName: string;
+  type: InventoryActivityType;
+  quantityBefore: number;
+  quantityChange: number;
+  quantityAfter: number;
+  note: string;
+  createdAt: string;
+};
+
 export type ProductDraft = Omit<Product, "id" | "createdAt" | "updatedAt">;
 
 export const PRODUCT_CATEGORIES = [

@@ -1,0 +1,28 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useEffect, useState } from "react";
+import { Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+
+import { formatVnd } from "@/lib/pos-calculations";
+import type { Product } from "@/lib/pos-types";
+
+type Props = { visible: boolean; product?: Product; onClose: () => void; onSave: (productId: string, change: number, note: string) => void };
+
+export function StockAdjustmentSheet({ visible, product, onClose, onSave }: Props) {
+  const [mode, setMode] = useState<"add" | "remove">("add");
+  const [quantity, setQuantity] = useState("");
+  const [note, setNote] = useState("");
+
+  useEffect(() => { if (visible) { setMode("add"); setQuantity(""); setNote(""); } }, [visible, product?.id]);
+
+  function save() {
+    const amount = Math.floor(Number(quantity.replace(/[^0-9]/g, "")));
+    if (!product || !Number.isFinite(amount) || amount <= 0) { Alert.alert("Số lượng chưa hợp lệ", "Nhập số lượng lớn hơn 0."); return; }
+    if (mode === "remove" && amount > product.stockQuantity) { Alert.alert("Không đủ tồn kho", `Sản phẩm hiện chỉ còn ${product.stockQuantity} ${product.unit}.`); return; }
+    onSave(product.id, mode === "add" ? amount : -amount, note.trim() || (mode === "add" ? "Nhập thêm hàng" : "Điều chỉnh giảm tồn"));
+    onClose();
+  }
+
+  return <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}><View style={styles.container}><View style={styles.header}><TouchableOpacity onPress={onClose} style={styles.close}><MaterialIcons name="close" size={24} color="#1D2A23" /></TouchableOpacity><Text style={styles.title}>Điều chỉnh tồn kho</Text><TouchableOpacity onPress={save} style={styles.save}><Text style={styles.saveText}>Lưu</Text></TouchableOpacity></View>{product ? <View style={styles.content}><View style={styles.productCard}><View style={styles.productIcon}><MaterialIcons name="inventory-2" size={24} color="#1F7A4A" /></View><View style={styles.productInfo}><Text style={styles.productName}>{product.name}</Text><Text style={styles.productMeta}>{formatVnd(product.price)} · tồn hiện tại {product.stockQuantity} {product.unit}</Text></View></View><Text style={styles.label}>Loại biến động</Text><View style={styles.modeRow}><TouchableOpacity onPress={() => setMode("add")} style={[styles.mode, mode === "add" && styles.modeAdd]}><MaterialIcons name="add-circle-outline" size={20} color={mode === "add" ? "#FFFFFF" : "#1F7A4A"} /><Text style={[styles.modeText, mode === "add" && styles.modeTextActive]}>Nhập thêm</Text></TouchableOpacity><TouchableOpacity onPress={() => setMode("remove")} style={[styles.mode, mode === "remove" && styles.modeRemove]}><MaterialIcons name="remove-circle-outline" size={20} color={mode === "remove" ? "#FFFFFF" : "#B5443E"} /><Text style={[styles.modeText, mode === "remove" && styles.modeTextActive]}>Giảm tồn</Text></TouchableOpacity></View><Text style={styles.label}>Số lượng ({product.unit})</Text><TextInput value={quantity} onChangeText={setQuantity} keyboardType="numeric" placeholder="0" placeholderTextColor="#8B968E" style={styles.input} autoFocus /><Text style={styles.label}>Ghi chú</Text><TextInput value={note} onChangeText={setNote} placeholder={mode === "add" ? "Ví dụ: Nhập từ nhà cung cấp" : "Ví dụ: Hàng hư hỏng"} placeholderTextColor="#8B968E" style={styles.input} /><View style={styles.hint}><MaterialIcons name="history" size={19} color="#1F7A4A" /><Text style={styles.hintText}>Thay đổi sẽ được lưu vào lịch sử kho của sản phẩm.</Text></View></View> : null}</View></Modal>;
+}
+
+const styles = StyleSheet.create({ container: { flex: 1, backgroundColor: "#F7F7F2" }, header: { minHeight: 64, backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#DFE5DF", paddingHorizontal: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, close: { width: 40, height: 40, alignItems: "center", justifyContent: "center" }, title: { color: "#1D2A23", fontSize: 17, fontWeight: "900" }, save: { minHeight: 38, borderRadius: 10, paddingHorizontal: 14, backgroundColor: "#1F7A4A", justifyContent: "center" }, saveText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" }, content: { padding: 20, gap: 12, width: "100%", maxWidth: 640, alignSelf: "center" }, productCard: { padding: 14, borderRadius: 16, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#DFE5DF", flexDirection: "row", gap: 11, alignItems: "center", marginBottom: 5 }, productIcon: { width: 45, height: 45, borderRadius: 14, backgroundColor: "#E7F1E8", alignItems: "center", justifyContent: "center" }, productInfo: { flex: 1, gap: 3 }, productName: { color: "#1D2A23", fontSize: 16, fontWeight: "900" }, productMeta: { color: "#6E7B71", fontSize: 12 }, label: { color: "#334139", fontSize: 14, fontWeight: "800" }, modeRow: { flexDirection: "row", gap: 10 }, mode: { flex: 1, minHeight: 48, borderRadius: 13, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#B9CFBE", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6 }, modeAdd: { backgroundColor: "#1F7A4A", borderColor: "#1F7A4A" }, modeRemove: { backgroundColor: "#B5443E", borderColor: "#B5443E" }, modeText: { color: "#1F7A4A", fontSize: 14, fontWeight: "900" }, modeTextActive: { color: "#FFFFFF" }, input: { minHeight: 48, borderRadius: 12, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#C9D4CB", paddingHorizontal: 14, color: "#1D2A23", fontSize: 16 }, hint: { padding: 12, borderRadius: 13, backgroundColor: "#E9F3EA", flexDirection: "row", gap: 8, alignItems: "center", marginTop: 4 }, hintText: { flex: 1, color: "#476650", fontSize: 13, lineHeight: 18, fontWeight: "700" } });
