@@ -192,3 +192,24 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Kiểm tra app contracts cho đăng nhập email/phone/PIN, storeType, role guard và seller attribution.
 - [x] Kiểm tra các luồng backup/restore, nhập hàng, hạn dùng, đóng ca, in file và in hóa đơn/tem giá.
 - [x] Ghi nhận lỗi, sửa hồi quy nếu có và cập nhật checkpoint kiểm thử.
+
+## Rà soát khoảng trống Website/app
+
+- [x] Đối chiếu lại tính năng còn thiếu và blocker trước public sau checkpoint kiểm thử e41d5e2f.
+- [x] Phân biệt rõ phần đã triển khai, phần mới có model/UI và phần chưa kiểm thử authenticated/device thật.
+- [x] Cập nhật danh sách ưu tiên triển khai tiếp theo cho Website, iOS và Android.
+
+## Tiếp tục hoàn thiện trước public và mở rộng thương mại hóa
+
+- [x] Viết test tenant isolation và role guard với hai workspace giả lập.
+- [x] Thêm test authenticated onboarding, tạo nhân viên, PIN và audit log qua router contract.
+- [ ] Ổn định Web preview và xác định nguyên nhân route unavailable/tự restart.
+- [ ] Hoàn thiện tài liệu production mapping: database, domain, environment, backup, monitoring và rollback.
+- [ ] Bổ sung xác nhận chuyển khoản/reconciliation theo giao dịch.
+- [ ] Bổ sung mời nhân viên qua SMS/email, khóa/mở tài khoản và đổi PIN.
+- [ ] Bổ sung khuyến mãi theo sản phẩm/đơn hàng và combo.
+- [ ] Thiết kế subscription, nhiều chi nhánh, giới hạn gói và thanh toán thương mại hóa.
+- [ ] Kiểm thử iPhone/Android thật và cập nhật tài liệu public.
+
+- [x] Tạo checklist production mapping chi tiết cho database, domain, environment, backup, monitoring, rollback và mobile release.
+- [x] Bổ sung owner-only khóa/mở tài khoản nhân viên và đổi PIN 4–6 số, kèm audit log và kiểm tra trạng thái.

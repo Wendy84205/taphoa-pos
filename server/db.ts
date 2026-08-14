@@ -240,6 +240,18 @@ export async function createStoreStaff(ownerUserId: number, input: { name: strin
   return { id: Number((result as { insertId?: number | bigint }).insertId ?? 0), userId: user.id, name: user.name, email: user.email, phone: user.phone, role: "staff" as const, status: "active" as const };
 }
 
+export async function updateStoreStaff(ownerUserId: number, memberId: number, values: { status?: "active" | "disabled"; pinHash?: string }) {
+  const workspace = await getWorkspaceForUser(ownerUserId);
+  if (!workspace || workspace.membership.role !== "owner") return null;
+  const member = await getStoreMemberById(workspace.store.id, memberId);
+  if (!member || member.role !== "staff") return null;
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  await db.update(storeMembers).set({ ...values, pinFailedAttempts: 0, pinLockedUntil: null }).where(and(eq(storeMembers.id, memberId), eq(storeMembers.storeId, workspace.store.id)));
+  await appendAuditLog(ownerUserId, workspace.store.id, values.pinHash ? "staff_pin_reset" : values.status === "disabled" ? "staff_disable" : "staff_enable", "store_member", String(memberId));
+  return getStoreMemberById(workspace.store.id, memberId);
+}
+
 export async function listAuditLogsForUser(userId: number, limit = 100) {
   const workspace = await getWorkspaceForUser(userId);
   if (!workspace || workspace.membership.role !== "owner") return [];
@@ -253,5 +265,5 @@ export async function listStoreMembers(userId: number) {
   if (!workspace) return [];
   const db = await getDb();
   if (!db) return [];
-  return db.select({ id: storeMembers.id, userId: users.id, name: users.name, email: users.email, role: storeMembers.role, status: storeMembers.status, createdAt: storeMembers.createdAt }).from(storeMembers).innerJoin(users, eq(users.id, storeMembers.userId)).where(eq(storeMembers.storeId, workspace.store.id)).orderBy(desc(storeMembers.id));
+  return db.select({ id: storeMembers.id, userId: users.id, name: users.name, email: users.email, phone: users.phone, role: storeMembers.role, status: storeMembers.status, createdAt: storeMembers.createdAt }).from(storeMembers).innerJoin(users, eq(users.id, storeMembers.userId)).where(eq(storeMembers.storeId, workspace.store.id)).orderBy(desc(storeMembers.id));
 }

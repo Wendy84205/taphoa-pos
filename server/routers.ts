@@ -123,6 +123,12 @@ export const appRouter = router({
       return updated;
     }),
     staff: router({
+      update: protectedProcedure.input(z.object({ memberId: z.number().int().positive(), status: z.enum(["active", "disabled"]).optional(), pin: z.string().regex(/^\d{4,6}$/).optional() })).mutation(async ({ ctx, input }) => {
+        if (!input.status && !input.pin) throw new TRPCError({ code: "BAD_REQUEST", message: "Cần chọn trạng thái hoặc nhập PIN mới." });
+        const updated = await db.updateStoreStaff(ctx.user.id, input.memberId, { status: input.status, pinHash: input.pin ? hashPassword(input.pin) : undefined });
+        if (!updated) throw new TRPCError({ code: "FORBIDDEN", message: "Không thể cập nhật nhân viên này." });
+        return updated;
+      }),
       create: protectedProcedure.input(staffCreateSchema).mutation(async ({ ctx, input }) => {
         const identifier = input.kind === "email" ? normalizeEmail(input.identifier) : normalizePhone(input.identifier);
         if (input.kind === "email" && !/^\S+@\S+\.\S+$/.test(identifier)) throw new TRPCError({ code: "BAD_REQUEST", message: "Email nhân viên chưa đúng định dạng." });
