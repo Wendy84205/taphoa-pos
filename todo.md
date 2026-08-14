@@ -310,5 +310,10 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 
 ## Git delivery
 
-- [ ] Rà soát diff và loại trừ secret/file tạm trước commit.
-- [ ] Chạy kiểm tra nhanh, commit và push thay đổi local lên GitHub.
+- [x] Rà soát diff và loại trừ secret/file tạm trước commit.
+- [x] Chạy kiểm tra nhanh, commit và push thay đổi local lên GitHub.
+
+## Full Git push review
+
+- [ ] Rà soát toàn bộ thay đổi local còn chưa push và loại trừ secret/file tạm.
+- [ ] Commit và push đầy đủ mã nguồn/tài liệu hợp lệ lên GitHub.
