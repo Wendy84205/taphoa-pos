@@ -255,3 +255,15 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [ ] Chạy lại dependency audit trong môi trường registry ổn định.
 - [ ] Chạy DEVICE_TEST_CHECKLIST.md trên iPhone và Android thật.
 - [x] Chạy full regression, export Web/Android/iOS và tạo checkpoint MVP production candidate.
+
+## Tenant, thiết bị thật và production go-live
+
+- [ ] Kiểm thử hai tenant bằng tài khoản giả lập an toàn: đọc/ghi snapshot, backup, restore, audit và thành viên không truy cập chéo.
+- [ ] Kiểm thử owner/staff theo từng route quản trị và xác nhận dữ liệu seller/audit đúng tenant.
+- [ ] Hoàn tất checklist iPhone/Android thật cho camera, SecureStore/session, offline, chia sẻ, in, deep link và mất mạng.
+- [x] Ghi nhận rõ các bước không thể thực hiện trong sandbox và hướng dẫn người dùng xác nhận trên thiết bị thật.
+- [ ] Hoàn thiện mapping domain HTTPS, CORS_ORIGINS, cookie, API base URL và database production.
+- [ ] Hoàn thiện kế hoạch backup/restore, monitoring, alerting và rollback production.
+- [x] Chạy regression cuối, cập nhật checklist go-live và tạo checkpoint bàn giao.
+- [x] Kiểm thử mô phỏng tenant A/B cho snapshot access và owner/staff guards.
+- [x] Tạo DEVICE_TEST_EXECUTION_LOG.md và PRODUCTION_MAPPING.md cho bước bàn giao.

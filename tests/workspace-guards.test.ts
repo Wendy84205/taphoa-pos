@@ -80,4 +80,14 @@ describe("workspace security guards", () => {
     await expect(caller.workspace.snapshot.backups()).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller.workspace.snapshot.restore({ backupId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
+
+  it("keeps two tenants isolated by authenticated user", async () => {
+    dbMock.getSnapshotForUser.mockImplementation(async (userId: number) => ({ storeId: userId === 1 ? 101 : 202, version: 1 }));
+    const tenantA = appRouter.createCaller(context());
+    const tenantB = appRouter.createCaller({ ...context(), user: { ...context().user!, id: 2, openId: "test-owner-b" } });
+    await expect(tenantA.workspace.snapshot.get()).resolves.toMatchObject({ storeId: 101 });
+    await expect(tenantB.workspace.snapshot.get()).resolves.toMatchObject({ storeId: 202 });
+    expect(dbMock.getSnapshotForUser).toHaveBeenNthCalledWith(1, 1);
+    expect(dbMock.getSnapshotForUser).toHaveBeenNthCalledWith(2, 2);
+  });
 });
