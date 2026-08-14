@@ -31,29 +31,40 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Enable CORS for all routes - reflect the request origin to support credentials
+  // In production, only explicitly configured origins may use cookie credentials.
+  // Development keeps the preview/LAN workflow flexible without weakening production.
+  const allowedOrigins = new Set(
+    (process.env.CORS_ORIGINS ?? "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  );
   app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (origin) {
+    const origin = typeof req.headers.origin === "string" ? req.headers.origin : undefined;
+    const isDevelopment = process.env.NODE_ENV !== "production";
+    const originAllowed = Boolean(origin && (allowedOrigins.has(origin) || isDevelopment));
+    if (originAllowed && origin) {
       res.header("Access-Control-Allow-Origin", origin);
+      res.header("Vary", "Origin");
+      res.header("Access-Control-Allow-Credentials", "true");
     }
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept, Authorization",
-    );
-    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
 
-    // Handle preflight requests
     if (req.method === "OPTIONS") {
-      res.sendStatus(200);
+      if (origin && !originAllowed) {
+        res.sendStatus(403);
+        return;
+      }
+      res.sendStatus(204);
       return;
     }
     next();
   });
 
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Snapshots are whole-state payloads, but must remain bounded to prevent memory/CPU abuse.
+  app.use(express.json({ limit: "5mb" }));
+  app.use(express.urlencoded({ limit: "1mb", extended: true }));
 
   registerStorageProxy(app);
   registerOAuthRoutes(app);

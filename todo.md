@@ -226,3 +226,18 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Bổ sung test tính giá khuyến mãi, combo, hoàn tiền/ghi nợ và đối soát.
 - [x] Tạo checklist kiểm thử iPhone/Android thật cho camera, SecureStore, offline, chia sẻ file và in.
 - [x] Export bundle Web/Android/iOS và cập nhật hướng dẫn cài đặt kiểm thử thiết bị.
+
+## Kiểm thử tổng thể và an ninh MVP
+
+- [x] Chạy toàn bộ TypeScript, lint, unit tests và bundle Web/Android/iOS.
+- [ ] Kiểm thử chức năng POS, sản phẩm, tồn kho, công nợ, VietQR, nhập hàng, hạn dùng, đóng ca, đối soát và khuyến mãi/combo.
+- [ ] Kiểm thử backup/restore, cloud snapshot, conflict resolution và LAN full-state.
+- [x] Kiểm tra Website responsive, route chính, loading/error/empty state và onboarding.
+- [x] Kiểm tra app contracts/native compatibility cho camera, SecureStore, offline, chia sẻ và in.
+- [ ] Rà soát auth/session, password hashing, cookie, CORS, input validation và rate limit.
+- [ ] Rà soát tenant isolation, owner/staff authorization, PIN lockout và audit trail.
+- [x] Rà soát secret exposure, log nhạy cảm, file backup và dữ liệu export.
+- [x] Ghi nhận phát hiện, khắc phục lỗi hồi quy nếu có và xác minh lại.
+- [x] Hardening CORS production, giới hạn body/snapshot và loại bỏ log token/user nhạy cảm.
+- [ ] Bổ sung rate limit cho login/PIN và CSRF protection cho mutation dùng cookie.
+- [ ] Bổ sung unique constraint email/phone và kiểm thử tenant isolation bằng hai tenant thật giả lập.

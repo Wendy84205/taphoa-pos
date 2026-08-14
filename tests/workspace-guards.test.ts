@@ -62,4 +62,12 @@ describe("workspace security guards", () => {
     const caller = appRouter.createCaller(context());
     await expect(caller.workspace.snapshot.push({ snapshot: {}, clientVersion: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
+
+  it("rejects an oversized snapshot before persistence", async () => {
+    dbMock.ensureWorkspaceForUser.mockResolvedValue({ store: { id: 7, storeType: "withStaff" }, membership: { storeId: 7, userId: 1, role: "owner", status: "active" } });
+    const caller = appRouter.createCaller(context());
+    const oversized = { payload: "x".repeat(4 * 1024 * 1024) };
+    await expect(caller.workspace.snapshot.push({ snapshot: oversized, clientVersion: 2 })).rejects.toMatchObject({ code: "PAYLOAD_TOO_LARGE" });
+    expect(dbMock.getSnapshotForUser).not.toHaveBeenCalled();
+  });
 });

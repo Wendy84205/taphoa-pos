@@ -9,7 +9,15 @@ import * as db from "./db";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import { hashPassword, normalizeEmail, normalizePhone, credentialsOpenId, validatePassword, validatePhone, verifyPassword } from "./credential-auth";
 
+const MAX_SNAPSHOT_BYTES = 4 * 1024 * 1024;
 const snapshotSchema = z.record(z.string(), z.unknown());
+
+function assertSnapshotSize(snapshot: Record<string, unknown>) {
+  const serialized = JSON.stringify(snapshot);
+  if (serialized.length > MAX_SNAPSHOT_BYTES) {
+    throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Dữ liệu đồng bộ vượt quá giới hạn 4MB." });
+  }
+}
 const credentialSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3), password: z.string().min(8), name: z.string().trim().min(1).max(120).optional() });
 const profileSchema = z.object({ name: z.string().trim().min(1).max(120), email: z.string().trim().email().optional().or(z.literal("")), phone: z.string().trim().optional() });
 const resetIdentifierSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3) });
@@ -159,6 +167,7 @@ export const appRouter = router({
         const workspace = await db.ensureWorkspaceForUser(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể mở quán." });
         if (workspace.membership.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Nhân viên chưa được phép ghi đè dữ liệu kho trên cloud." });
+        assertSnapshotSize(input.snapshot);
         try {
           return await db.upsertSnapshotForUser(ctx.user.id, input.snapshot, input.clientVersion);
         } catch (error) {
