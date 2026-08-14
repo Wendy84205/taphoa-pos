@@ -45,3 +45,4 @@
 - [x] Đối chiếu trạng thái tính năng quản lý hạn sử dụng và thông báo rõ phạm vi hiện có.
 - [x] Khôi phục bản xem trước POS để hoàn tất kiểm tra trực tiếp các tính năng sau khi khởi động lại.
 - [x] Ổn định bản xem trước POS bằng gói Web tĩnh để tránh Metro ngừng phản hồi trong lúc kiểm tra.
+- [x] Tạo commit và cập nhật toàn bộ thay đổi hoàn tất của Tạp Hóa POS lên GitHub.
