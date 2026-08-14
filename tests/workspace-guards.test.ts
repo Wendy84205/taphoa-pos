@@ -70,4 +70,14 @@ describe("workspace security guards", () => {
     await expect(caller.workspace.snapshot.push({ snapshot: oversized, clientVersion: 2 })).rejects.toMatchObject({ code: "PAYLOAD_TOO_LARGE" });
     expect(dbMock.getSnapshotForUser).not.toHaveBeenCalled();
   });
+
+  it("blocks staff from audit, member and backup administration", async () => {
+    dbMock.ensureWorkspaceForUser.mockResolvedValue({ store: { id: 7, storeType: "withStaff" }, membership: { storeId: 7, userId: 1, role: "staff", status: "active" } });
+    dbMock.listAuditLogsForUser.mockResolvedValue(null);
+    const caller = appRouter.createCaller(context());
+    await expect(caller.workspace.audit()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.workspace.members()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.workspace.snapshot.backups()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.workspace.snapshot.restore({ backupId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
 });

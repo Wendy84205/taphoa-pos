@@ -241,3 +241,17 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Hardening CORS production, giới hạn body/snapshot và loại bỏ log token/user nhạy cảm.
 - [ ] Bổ sung rate limit cho login/PIN và CSRF protection cho mutation dùng cookie.
 - [ ] Bổ sung unique constraint email/phone và kiểm thử tenant isolation bằng hai tenant thật giả lập.
+
+## MVP production candidate — blocker cần hoàn thiện
+
+- [x] Thêm rate limit theo IP và identifier cho đăng nhập email/số điện thoại, đăng ký và staff PIN.
+- [x] Thêm CSRF protection cho các mutation Web dùng cookie, gồm profile, staff, snapshot và restore.
+- [ ] Tách rõ token response native khỏi Web hoặc giảm tối đa việc trả token trong response Web.
+- [x] Bổ sung giới hạn cấu trúc snapshot theo depth, số lượng phần tử và độ dài chuỗi.
+- [x] Thêm unique constraint database cho email và số điện thoại nullable, kèm migration an toàn.
+- [ ] Viết test tenant isolation giữa hai workspace và test owner/staff cho mọi route quản trị.
+- [x] Viết test rate limit, CSRF, payload giới hạn và không lộ dữ liệu nhạy cảm trong log.
+- [ ] Hoàn thiện production environment mapping, CORS_ORIGINS, cookie, database, backup, monitoring và rollback.
+- [ ] Chạy lại dependency audit trong môi trường registry ổn định.
+- [ ] Chạy DEVICE_TEST_CHECKLIST.md trên iPhone và Android thật.
+- [x] Chạy full regression, export Web/Android/iOS và tạo checkpoint MVP production candidate.

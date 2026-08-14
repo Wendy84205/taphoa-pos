@@ -31,8 +31,14 @@ export function createTRPCClient() {
         },
         // Custom fetch to include credentials for cookie-based auth
         fetch(url, options) {
+          const csrfToken = typeof document !== "undefined"
+            ? document.cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith("taphoa_csrf="))?.slice("taphoa_csrf=".length)
+            : undefined;
+          const headers = new Headers(options?.headers);
+          if (csrfToken) headers.set("x-csrf-token", decodeURIComponent(csrfToken));
           return fetch(url, {
             ...options,
+            headers,
             credentials: "include",
           });
         },

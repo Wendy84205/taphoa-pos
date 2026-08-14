@@ -3,6 +3,8 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { createRateLimiter, clientIp, createCsrfToken, CSRF_COOKIE_NAME, csrfMatches, readCookie } from "../security";
+import { COOKIE_NAME } from "../../shared/const";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
@@ -30,6 +32,8 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  const authLimiter = createRateLimiter(10, 15 * 60 * 1000);
+  const pinLimiter = createRateLimiter(20, 15 * 60 * 1000);
 
   // In production, only explicitly configured origins may use cookie credentials.
   // Development keeps the preview/LAN workflow flexible without weakening production.
@@ -40,6 +44,15 @@ async function startServer() {
       .filter(Boolean),
   );
   app.use((req, res, next) => {
+    if (!readCookie(req, CSRF_COOKIE_NAME)) {
+      res.cookie(CSRF_COOKIE_NAME, createCsrfToken(), {
+        httpOnly: false,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+      });
+    }
+
     const origin = typeof req.headers.origin === "string" ? req.headers.origin : undefined;
     const isDevelopment = process.env.NODE_ENV !== "production";
     const originAllowed = Boolean(origin && (allowedOrigins.has(origin) || isDevelopment));
@@ -57,6 +70,22 @@ async function startServer() {
         return;
       }
       res.sendStatus(204);
+      return;
+    }
+    const trpcPath = req.originalUrl.split("/api/trpc/")[1]?.split("?")[0] ?? "";
+    if (req.method === "POST" && trpcPath.startsWith("auth.") && !authLimiter(`${clientIp(req)}:${trpcPath}`)) {
+      res.sendStatus(429);
+      return;
+    }
+    if (req.method === "POST" && trpcPath === "auth.staffPinLogin" && !pinLimiter(`${clientIp(req)}:${trpcPath}`)) {
+      res.sendStatus(429);
+      return;
+    }
+
+    const cookieHeader = req.headers.cookie;
+    const hasSessionCookie = Boolean(cookieHeader && readCookie(req, COOKIE_NAME));
+    if (req.method !== "GET" && req.method !== "HEAD" && hasSessionCookie && req.path.startsWith("/api/trpc") && !csrfMatches(req)) {
+      res.sendStatus(403);
       return;
     }
     next();

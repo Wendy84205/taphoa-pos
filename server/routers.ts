@@ -17,6 +17,25 @@ function assertSnapshotSize(snapshot: Record<string, unknown>) {
   if (serialized.length > MAX_SNAPSHOT_BYTES) {
     throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Dữ liệu đồng bộ vượt quá giới hạn 4MB." });
   }
+
+  const visit = (value: unknown, depth: number) => {
+    if (depth > 8) throw new TRPCError({ code: "BAD_REQUEST", message: "Dữ liệu đồng bộ có cấu trúc quá sâu." });
+    if (typeof value === "string" && value.length > 20_000) throw new TRPCError({ code: "BAD_REQUEST", message: "Dữ liệu đồng bộ có chuỗi quá dài." });
+    if (Array.isArray(value)) {
+      if (value.length > 20_000) throw new TRPCError({ code: "BAD_REQUEST", message: "Dữ liệu đồng bộ có quá nhiều phần tử." });
+      value.forEach((item) => visit(item, depth + 1));
+      return;
+    }
+    if (value && typeof value === "object") {
+      const entries = Object.entries(value);
+      if (entries.length > 500) throw new TRPCError({ code: "BAD_REQUEST", message: "Dữ liệu đồng bộ có quá nhiều trường." });
+      entries.forEach(([key, item]) => {
+        if (key.length > 200) throw new TRPCError({ code: "BAD_REQUEST", message: "Tên trường đồng bộ quá dài." });
+        visit(item, depth + 1);
+      });
+    }
+  };
+  visit(snapshot, 0);
 }
 const credentialSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3), password: z.string().min(8), name: z.string().trim().min(1).max(120).optional() });
 const profileSchema = z.object({ name: z.string().trim().min(1).max(120), email: z.string().trim().email().optional().or(z.literal("")), phone: z.string().trim().optional() });
