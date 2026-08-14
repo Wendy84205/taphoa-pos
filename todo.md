@@ -110,6 +110,9 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Tạo workspace Bán hàng desktop hai cột với thanh tìm kiếm, giỏ hàng và thanh toán rõ ràng.
 - [x] Nâng cấp bảng Sản phẩm, Hóa đơn, Báo cáo, Công nợ và Tài khoản theo cùng hệ thống component.
 - [ ] Kiểm tra trạng thái offline/cloud và thông báo lỗi trên Website.
+- [x] Tạo landing page giới thiệu Tạp Hóa POS tách biệt khỏi khu vực vận hành.
+- [x] Bổ sung hero, tính năng nổi bật, lợi ích cửa hàng và CTA bắt đầu dùng thử.
+- [x] Kiểm tra landing page responsive desktop/mobile và điều hướng vào POS.
 - [x] Kiểm thử responsive Web desktop/tablet/mobile và các thao tác POS chính.
 - [ ] Chuẩn bị tài liệu biến môi trường và mapping backend cho Vercel/Supabase, chưa public.
 - [x] Lưu checkpoint Website hoàn thiện và cập nhật GitHub.
