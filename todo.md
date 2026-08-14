@@ -41,3 +41,7 @@
 - [x] Hỗ trợ một sản phẩm có nhiều đơn vị quy đổi cùng giá bán theo từng đơn vị.
 - [x] Chuẩn bị mô hình dữ liệu cho nhà cung cấp, nhập hàng, hạn sử dụng và đóng ca cuối ngày.
 - [x] Kiểm thử công nợ, QR thanh toán và quy đổi đơn vị bằng bộ kiểm thử, TypeScript và lint.
+- [x] Kiểm tra trực tiếp sổ nợ, VietQR, quy đổi đơn vị và giao diện POS sau khi khởi động lại.
+- [x] Đối chiếu trạng thái tính năng quản lý hạn sử dụng và thông báo rõ phạm vi hiện có.
+- [x] Khôi phục bản xem trước POS để hoàn tất kiểm tra trực tiếp các tính năng sau khi khởi động lại.
+- [x] Ổn định bản xem trước POS bằng gói Web tĩnh để tránh Metro ngừng phản hồi trong lúc kiểm tra.
