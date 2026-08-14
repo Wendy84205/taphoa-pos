@@ -78,3 +78,11 @@ Mở màn **Tài khoản** từ sidebar Web để xem email đăng nhập, works
 Để chạy backend cloud, cần cấu hình `DATABASE_URL` cho server theo môi trường WebDev. Migration `drizzle/0001_silent_firebird.sql` tạo các bảng `stores`, `storeMembers`, `posSnapshots` và `auditLogs`; không xóa bảng `users` hay dữ liệu POS cục bộ. Khi phát hành thật, cần bổ sung luồng mời thành viên, conflict resolution theo từng entity, rate limit và backup cloud định kỳ.
 
 Đồng bộ Firebase, mời nhân viên qua email, in Bluetooth, xuất Excel/CSV nâng cao, subscription và nhận diện hàng bằng AI chưa được kết nối đầy đủ ở bản SaaS MVP. Các hạng mục này nên triển khai sau khi xác nhận quy trình bán hàng thực tế của nhiều quán.
+
+## Onboarding spotlight và đăng nhập mobile
+
+Khi mở ứng dụng lần đầu, Tạp Hóa POS hiển thị tour spotlight năm bước. Nền giao diện được làm tối, vùng thao tác hiện tại được viền vàng để người dùng tập trung vào từng bước: tra giá, điều hướng, giỏ hàng, cảnh báo tồn kho và offline-first. Người dùng chọn “Tiếp theo” để đi tuần tự hoặc đóng tour. Tour chỉ hiển thị một lần trên thiết bị và có thể mở lại từ “Trợ giúp & hướng dẫn” ở cuối sidebar Web.
+
+Màn **Tài khoản** hiện giữ nút Manus OAuth và bổ sung form credentials dùng chung cho iOS/Android với hai lựa chọn **Email** hoặc **Số điện thoại**, cùng chế độ đăng nhập/tạo tài khoản. Mật khẩu phải có tối thiểu 8 ký tự và server chỉ lưu bản hash scrypt có salt, không lưu mật khẩu thô. Native lưu session token bằng SecureStore; Web tiếp tục dùng cookie OAuth/session hiện tại.
+
+Luồng số điện thoại hiện hỗ trợ chuẩn hóa số Việt Nam và đăng nhập bằng số điện thoại + mật khẩu. Xác minh OTP SMS, khôi phục mật khẩu, giới hạn thử sai và tích hợp nhà cung cấp SMS vẫn là hạng mục cần bổ sung trước khi public production.

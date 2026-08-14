@@ -15,6 +15,13 @@
       "when": 1786718113629,
       "tag": "0001_silent_firebird",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786722443530,
+      "tag": "0002_nebulous_pyro",
+      "breakpoints": true
     }
   ]
 }

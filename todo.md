@@ -109,7 +109,12 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Tạo dashboard Tra cứu có hero, chỉ số vận hành, cảnh báo tồn kho và hoạt động gần đây.
 - [x] Tạo workspace Bán hàng desktop hai cột với thanh tìm kiếm, giỏ hàng và thanh toán rõ ràng.
 - [x] Nâng cấp bảng Sản phẩm, Hóa đơn, Báo cáo, Công nợ và Tài khoản theo cùng hệ thống component.
-- [ ] Kiểm tra trạng thái offline/cloud và thông báo lỗi trên Website.
+- [x] Kiểm tra trạng thái offline/cloud và thông báo lỗi trên Website.
+- [x] Thiết kế onboarding tour spotlight theo từng bước, làm tối phần còn lại và chỉ hiển thị lần đầu.
+- [x] Thêm cơ chế mở lại hướng dẫn từ khu vực Trợ giúp & hướng dẫn.
+- [x] Thiết kế đăng nhập mobile bằng email/mật khẩu và số điện thoại, giữ OAuth hiện có.
+- [x] Bổ sung validation, trạng thái lỗi/loading và bảo vệ auth cho luồng đăng nhập mới.
+- [x] Kiểm thử onboarding và đăng nhập trên Web/mobile, cập nhật tài liệu và GitHub.
 - [x] Rà soát toàn bộ màn quản lý để lập danh sách thiếu sót UX còn lại.
 - [x] Thêm cloud guide cho Sản phẩm, Công nợ và Báo cáo.
 - [x] Chuẩn hóa component loading, error và empty state cho toàn bộ màn quản lý.
