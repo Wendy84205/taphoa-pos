@@ -112,4 +112,4 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [ ] Kiểm tra trạng thái offline/cloud và thông báo lỗi trên Website.
 - [x] Kiểm thử responsive Web desktop/tablet/mobile và các thao tác POS chính.
 - [ ] Chuẩn bị tài liệu biến môi trường và mapping backend cho Vercel/Supabase, chưa public.
-- [ ] Lưu checkpoint Website hoàn thiện và cập nhật GitHub.
+- [x] Lưu checkpoint Website hoàn thiện và cập nhật GitHub.
