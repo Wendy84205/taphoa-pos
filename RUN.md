@@ -41,4 +41,14 @@ Tại tab **Báo cáo**, chọn **Ngày**, **Tuần** hoặc **Tháng** để xe
 
 Tại tab **Hóa đơn**, nút **Xuất CSV** tạo tệp chi tiết theo từng mặt hàng trong hóa đơn. Tệp CSV dùng dấu chấm phẩy và có mã hóa UTF-8 BOM, phù hợp để mở trong Microsoft Excel hoặc Google Sheets. Trên Web tệp sẽ được tải xuống; trên Android/iOS, hệ thống sẽ mở bảng chia sẻ để lưu hoặc gửi tệp.
 
+## Nhập sản phẩm hàng loạt từ Excel
+
+Trong tab **Sản phẩm**, chọn **Nhập** rồi chọn tệp Excel (`.xlsx`, `.xls`) hoặc CSV từ máy. Hệ thống hiển thị trước số dòng hợp lệ và các dòng cần sửa trước khi lưu. Cột tối thiểu là **Tên sản phẩm** và **Giá bán**; các cột còn lại gồm Giá vốn, Đơn vị, Nhóm hàng, Mã vạch, Tồn kho và Ngưỡng cảnh báo. Tệp `mau-nhap-san-pham.csv` ở thư mục dự án là một mẫu có thể mở và chỉnh sửa bằng Excel.
+
+Nếu một mã vạch đã có, lần nhập mới sẽ cập nhật sản phẩm hiện có thay vì tạo trùng. Khi nhập xong, các mặt hàng có số tồn không vượt ngưỡng cảnh báo sẽ xuất hiện trong khung **Cần nhập thêm hàng** tại trang Tra cứu.
+
+## Quét mã vạch nhanh
+
+Tại trang **Tra cứu**, chạm nút quét mã màu vàng. Lần đầu, hãy cấp quyền dùng camera; hướng camera vào mã EAN, UPC, Code 128, Code 93, Code 39, ITF-14 hoặc Codabar. Nếu tìm thấy sản phẩm, ứng dụng hiển thị giá và nút **Thêm** để đưa vào giỏ; nếu chưa có, chọn **Tạo nhanh** để lưu sản phẩm với mã vừa quét. Khi camera không đọc được, có thể nhập mã ở ô dự phòng bên dưới khung quét.
+
 Đồng bộ Firebase, tài khoản nhân viên, in Bluetooth, xuất Excel/CSV và nhận diện hàng bằng AI chưa được kết nối ở bản MVP. Các hạng mục này nên được triển khai ở giai đoạn tiếp theo sau khi đã xác nhận quy trình bán hàng thực tế của quán.

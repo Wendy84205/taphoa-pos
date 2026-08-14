@@ -26,3 +26,8 @@
 - [ ] Kiểm thử nhiều thiết bị trong cùng Wi‑Fi, soạn hướng dẫn cài đặt và lưu phiên bản nâng cấp.
 - [x] Khắc phục lỗi iPhone/Expo Go không kết nối được máy chủ phát triển và xác minh bundle iOS.
 - [x] Khôi phục bản xem trước Web POS và xác minh luồng quản lý sản phẩm.
+- [x] Hoàn thiện các luồng POS nhất quán trên Web và điện thoại trong phạm vi tính năng hiện có.
+- [x] Nhập danh sách sản phẩm hàng loạt từ Excel/CSV với kiểm tra dữ liệu trước khi lưu.
+- [x] Bổ sung bảng cảnh báo sản phẩm sắp hết ngay trên trang chủ.
+- [x] Hoàn thiện quét mã vạch bằng camera để tra cứu và thêm nhanh sản phẩm trên các nền tảng hỗ trợ.
+- [x] Kiểm thử nhập Excel, cảnh báo tồn kho và luồng quét mã bằng bộ kiểm thử, TypeScript, lint và cấu hình Expo.

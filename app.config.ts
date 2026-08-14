@@ -29,6 +29,7 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     "./plugins/with-lan-cleartext",
+    "expo-document-picker",
     ["expo-camera", { cameraPermission: "Cho phép $(PRODUCT_NAME) dùng camera để quét mã vạch sản phẩm." }],
     ["expo-image-picker", { photosPermission: "Cho phép $(PRODUCT_NAME) truy cập ảnh để gắn ảnh sản phẩm.", cameraPermission: "Cho phép $(PRODUCT_NAME) dùng camera để chụp ảnh sản phẩm." }],
     ["expo-splash-screen", { image: "./assets/images/splash-icon.png", imageWidth: 200, resizeMode: "contain", backgroundColor: "#F7F7F2", dark: { backgroundColor: "#131A15" } }],

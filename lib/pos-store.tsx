@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { calculateSubtotal, calculateTotal } from "@/lib/pos-calculations";
+import { importProductsIntoCatalog } from "@/lib/product-import";
 import type { CartItem, Order, Product, ProductDraft } from "@/lib/pos-types";
 import { createContext, ReactNode, useContext, useEffect, useMemo, useReducer } from "react";
 
@@ -25,6 +26,7 @@ type PosContextValue = PosState & {
   checkout: (discount: number) => Order | null;
   getProductByBarcode: (barcode: string) => Product | undefined;
   replaceRemoteSnapshot: (products: Product[], orders: Order[]) => void;
+  importProducts: (drafts: ProductDraft[]) => { added: number; updated: number };
 };
 
 type Action =
@@ -37,7 +39,8 @@ type Action =
   | { type: "REMOVE_FROM_CART"; productId: string }
   | { type: "CLEAR_CART" }
   | { type: "CHECKOUT"; payload: { order: Order } }
-  | { type: "REPLACE_REMOTE_SNAPSHOT"; payload: { products: Product[]; orders: Order[] } };
+  | { type: "REPLACE_REMOTE_SNAPSHOT"; payload: { products: Product[]; orders: Order[] } }
+  | { type: "IMPORT_PRODUCTS"; payload: Product[] };
 
 const now = new Date().toISOString();
 const seedProducts: Product[] = [
@@ -121,6 +124,8 @@ function reducer(state: PosState, action: Action): PosState {
       };
     case "REPLACE_REMOTE_SNAPSHOT":
       return { ...state, products: action.payload.products, orders: action.payload.orders };
+    case "IMPORT_PRODUCTS":
+      return { ...state, products: action.payload };
     default:
       return state;
   }
@@ -176,6 +181,11 @@ export function PosStoreProvider({ children }: { children: ReactNode }) {
     },
     getProductByBarcode: (barcode) => state.products.find((product) => product.barcode === barcode),
     replaceRemoteSnapshot: (products, orders) => dispatch({ type: "REPLACE_REMOTE_SNAPSHOT", payload: { products, orders } }),
+    importProducts: (drafts) => {
+      const imported = importProductsIntoCatalog(state.products, drafts);
+      dispatch({ type: "IMPORT_PRODUCTS", payload: imported.products });
+      return { added: imported.added, updated: imported.updated };
+    },
   }), [state]);
 
   return <PosContext.Provider value={value}>{children}</PosContext.Provider>;
