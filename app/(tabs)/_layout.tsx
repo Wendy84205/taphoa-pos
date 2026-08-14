@@ -19,6 +19,7 @@ export default function TabLayout() {
         <Tabs.Screen name="san-pham" options={{ title: "Sản phẩm", tabBarIcon: ({ color }) => <MaterialIcons name="inventory-2" size={23} color={color} /> }} />
         <Tabs.Screen name="lich-su" options={{ title: "Hóa đơn", tabBarIcon: ({ color }) => <MaterialIcons name="receipt-long" size={24} color={color} /> }} />
         <Tabs.Screen name="bao-cao" options={{ title: "Báo cáo", tabBarIcon: ({ color }) => <MaterialIcons name="bar-chart" size={24} color={color} /> }} />
+        <Tabs.Screen name="cong-no" options={{ title: "Công nợ", tabBarIcon: ({ color }) => <MaterialIcons name="receipt-long" size={23} color={color} /> }} />
         <Tabs.Screen name="ket-noi" options={{ title: "Kết nối", tabBarIcon: ({ color }) => <MaterialIcons name="wifi" size={23} color={color} /> }} />
       </Tabs></LanSyncProvider>
     </PosStoreProvider>

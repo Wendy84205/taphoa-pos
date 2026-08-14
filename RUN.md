@@ -59,4 +59,12 @@ Tại tab **Sản phẩm**, nút biểu tượng đồng hồ mở **Lịch sử
 
 Tại trang **Tra cứu**, chạm nút quét mã màu vàng. Lần đầu, hãy cấp quyền dùng camera; hướng camera vào mã EAN, UPC, Code 128, Code 93, Code 39, ITF-14 hoặc Codabar. Nếu tìm thấy sản phẩm, ứng dụng hiển thị giá và nút **Thêm** để đưa vào giỏ; nếu chưa có, chọn **Tạo nhanh** để lưu sản phẩm với mã vừa quét. Khi camera không đọc được, có thể nhập mã ở ô dự phòng bên dưới khung quét.
 
+## Sổ nợ, VietQR và bán sỉ/lẻ
+
+Khi chốt đơn ở tab **Bán hàng**, chọn **Ghi nợ** rồi chọn hoặc tạo **Khách quen**. Hóa đơn được ghi vào sổ nợ và có thể thu từng phần tại tab **Công nợ**. Danh sách ưu tiên theo số tiền và thời gian nợ để chủ quán tiện theo dõi.
+
+Chọn **Chuyển khoản** để mở VietQR với đúng số tiền của đơn. Trước lần dùng đầu, nhập mã BIN 6 số của ngân hàng, số tài khoản và tên chủ tài khoản không dấu. Mã QR được tạo cục bộ trên thiết bị; hãy kiểm tra tiền đã vào tài khoản trước khi hoàn tất bán hàng.
+
+Khi thêm hoặc sửa sản phẩm, mục **Đơn vị quy đổi** cho phép khai báo lốc/thùng, số lượng quy đổi về đơn vị cơ sở và giá bán riêng. Trong trang Tra cứu, chạm nút **lốc** hoặc **thùng** để thêm đúng đơn vị vào giỏ; ứng dụng trừ tồn theo số chai/gói cơ sở.
+
 Đồng bộ Firebase, tài khoản nhân viên, in Bluetooth, xuất Excel/CSV và nhận diện hàng bằng AI chưa được kết nối ở bản MVP. Các hạng mục này nên được triển khai ở giai đoạn tiếp theo sau khi đã xác nhận quy trình bán hàng thực tế của quán.

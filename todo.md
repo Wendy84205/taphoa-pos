@@ -36,3 +36,8 @@
 - [x] Tạo màn xem chi tiết lịch sử kho có thể lọc theo sản phẩm và loại biến động.
 - [x] Thêm bộ lọc và sắp xếp cho danh sách cảnh báo sản phẩm sắp hết trên trang chủ.
 - [x] Kiểm thử nhật ký kho, tải tệp mẫu và bộ lọc cảnh báo tồn thấp.
+- [x] Thiết kế và xây dựng sổ nợ khách quen, ghi nợ khi bán và thanh toán nợ một phần/toàn bộ.
+- [x] Tạo thanh toán VietQR theo số tiền đơn hàng và lưu phương thức tiền mặt/chuyển khoản.
+- [x] Hỗ trợ một sản phẩm có nhiều đơn vị quy đổi cùng giá bán theo từng đơn vị.
+- [x] Chuẩn bị mô hình dữ liệu cho nhà cung cấp, nhập hàng, hạn sử dụng và đóng ca cuối ngày.
+- [x] Kiểm thử công nợ, QR thanh toán và quy đổi đơn vị bằng bộ kiểm thử, TypeScript và lint.

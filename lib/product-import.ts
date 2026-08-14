@@ -21,6 +21,7 @@ const HEADER_ALIASES: Record<keyof ProductDraft, string[]> = {
   imageUri: ["ảnh", "anh", "image", "imageuri"],
   stockQuantity: ["tồn", "ton", "tồn kho", "ton kho", "stock", "stockquantity"],
   lowStockThreshold: ["ngưỡng cảnh báo", "nguong canh bao", "ngưỡng", "nguong", "lowstockthreshold"],
+  units: ["đơn vị quy đổi", "don vi quy doi", "units"],
 };
 
 function normalizeHeader(value: unknown) {
@@ -78,6 +79,7 @@ export function previewProductImport(rows: SpreadsheetRow[], fileName: string): 
       imageUri: cleanText(getValue(row, "imageUri")) || undefined,
       stockQuantity: Math.max(0, Math.round(numeric(getValue(row, "stockQuantity")))),
       lowStockThreshold: Math.max(0, Math.round(numeric(getValue(row, "lowStockThreshold"), 3))),
+      units: undefined,
     });
   });
 

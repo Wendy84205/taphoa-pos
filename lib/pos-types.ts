@@ -9,17 +9,21 @@ export type Product = {
   imageUri?: string;
   stockQuantity: number;
   lowStockThreshold: number;
+  units?: ProductUnit[];
   createdAt: string;
   updatedAt: string;
 };
 
 export type CartItem = {
+  id?: string;
   productId: string;
   name: string;
   price: number;
   unit: string;
   quantity: number;
   stockQuantity: number;
+  unitId?: string;
+  conversionToBase?: number;
 };
 
 export type OrderItem = {
@@ -37,6 +41,75 @@ export type Order = {
   subtotal: number;
   discount: number;
   totalAmount: number;
+  paymentMethod?: PaymentMethod;
+  customerId?: string;
+  customerName?: string;
+  amountReceived?: number;
+  debtAmount?: number;
+};
+
+export type PaymentMethod = "cash" | "bank_transfer" | "debt";
+
+export type ProductUnit = {
+  id: string;
+  label: string;
+  conversionToBase: number;
+  price: number;
+  isBase?: boolean;
+};
+
+export type Customer = {
+  id: string;
+  name: string;
+  phone?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DebtTransactionType = "charge" | "payment";
+
+export type DebtTransaction = {
+  id: string;
+  customerId: string;
+  customerName: string;
+  type: DebtTransactionType;
+  amount: number;
+  orderId?: string;
+  note: string;
+  createdAt: string;
+};
+
+export type PaymentSettings = {
+  bankBin: string;
+  accountNumber: string;
+  accountName: string;
+};
+
+export type Supplier = {
+  id: string;
+  name: string;
+  phone?: string;
+  address?: string;
+  openingBalance?: number;
+  createdAt: string;
+};
+
+export type StockReceipt = {
+  id: string;
+  supplierId?: string;
+  supplierName?: string;
+  totalAmount: number;
+  debtAmount: number;
+  createdAt: string;
+};
+
+export type ExpiryBatch = {
+  id: string;
+  productId: string;
+  quantity: number;
+  expiresAt: string;
+  createdAt: string;
 };
 
 export type InventoryActivityType = "import" | "adjustment" | "sale" | "initial" | "update";
