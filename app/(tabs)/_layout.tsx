@@ -17,6 +17,7 @@ export default function TabLayout() {
         <Tabs.Screen name="ban-hang" options={{ title: "Bán hàng", tabBarIcon: ({ color }) => <MaterialIcons name="shopping-cart" size={24} color={color} /> }} />
         <Tabs.Screen name="san-pham" options={{ title: "Sản phẩm", tabBarIcon: ({ color }) => <MaterialIcons name="inventory-2" size={23} color={color} /> }} />
         <Tabs.Screen name="lich-su" options={{ title: "Hóa đơn", tabBarIcon: ({ color }) => <MaterialIcons name="receipt-long" size={24} color={color} /> }} />
+        <Tabs.Screen name="bao-cao" options={{ title: "Báo cáo", tabBarIcon: ({ color }) => <MaterialIcons name="bar-chart" size={24} color={color} /> }} />
       </Tabs>
     </PosStoreProvider>
   );

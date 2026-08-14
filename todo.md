@@ -13,3 +13,8 @@
 - [x] Viết kiểm thử dữ liệu và kiểm tra kiểu mã nguồn.
 - [x] Hoàn thiện trải nghiệm Web/iOS/Android và hướng dẫn chạy thử.
 - [x] Lưu phiên bản và bàn giao.
+- [x] Xây dựng bộ tổng hợp doanh thu theo ngày, tuần và tháng từ hóa đơn đã lưu.
+- [x] Thêm màn báo cáo với biểu đồ doanh thu trực quan và các chỉ số tổng quan.
+- [x] Xuất lịch sử hóa đơn và chi tiết mặt hàng sang tệp CSV tương thích Excel.
+- [x] Kiểm thử báo cáo và tệp xuất CSV.
+- [x] Lưu phiên bản nâng cấp và bàn giao.
