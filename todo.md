@@ -110,6 +110,11 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Tạo workspace Bán hàng desktop hai cột với thanh tìm kiếm, giỏ hàng và thanh toán rõ ràng.
 - [x] Nâng cấp bảng Sản phẩm, Hóa đơn, Báo cáo, Công nợ và Tài khoản theo cùng hệ thống component.
 - [ ] Kiểm tra trạng thái offline/cloud và thông báo lỗi trên Website.
+- [x] Rà soát toàn bộ màn quản lý để lập danh sách thiếu sót UX còn lại.
+- [x] Thêm cloud guide cho Sản phẩm, Công nợ và Báo cáo.
+- [x] Chuẩn hóa component loading, error và empty state cho toàn bộ màn quản lý.
+- [x] Bổ sung các điểm UX thiếu quan trọng được phát hiện trong lượt rà soát.
+- [x] Kiểm thử toàn bộ route quản lý desktop/mobile và cập nhật GitHub.
 - [x] Đồng bộ shell quản lý POS với màu sắc, typography và component của landing page.
 - [x] Nâng cấp dashboard Tra cứu và các thẻ KPI/cảnh báo theo UI mới.
 - [x] Nâng cấp Bán hàng, Sản phẩm, Hóa đơn, Báo cáo, Công nợ và Tài khoản theo cùng hệ thống.
