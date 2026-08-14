@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, Store, StoreMember, auditLogs, authChallenges, posSnapshots, storeMembers, stores, users } from "../drizzle/schema";
+import { InsertUser, Store, StoreMember, auditLogs, authChallenges, posSnapshots, snapshotBackups, storeMembers, stores, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -139,16 +139,51 @@ export async function getSnapshotForUser(userId: number): Promise<{ snapshot: Re
   }
 }
 
-export async function upsertSnapshotForUser(userId: number, snapshot: Record<string, unknown>) {
+export class SnapshotConflictError extends Error {
+  constructor(public readonly currentVersion: number) {
+    super("Dữ liệu cloud đã được thay đổi trên thiết bị khác.");
+    this.name = "SnapshotConflictError";
+  }
+}
+
+export async function upsertSnapshotForUser(userId: number, snapshot: Record<string, unknown>, clientVersion?: number) {
   const workspace = await ensureWorkspaceForUser(userId);
   if (!workspace) throw new Error("Cloud database is not available");
   const db = await getDb();
   if (!db) throw new Error("Cloud database is not available");
   const current = (await db.select().from(posSnapshots).where(eq(posSnapshots.storeId, workspace.store.id)).limit(1))[0];
-  const version = (current?.version ?? 0) + 1;
+  const currentVersion = current?.version ?? 0;
+  if (clientVersion !== undefined && clientVersion !== currentVersion) throw new SnapshotConflictError(currentVersion);
+  const version = currentVersion + 1;
+  if (current) {
+    await db.insert(snapshotBackups).values({ storeId: workspace.store.id, sourceVersion: current.version, snapshotJson: current.snapshotJson, createdByUserId: userId });
+  }
   await db.insert(posSnapshots).values({ storeId: workspace.store.id, version, snapshotJson: JSON.stringify(snapshot), updatedByUserId: userId }).onDuplicateKeyUpdate({ set: { version, snapshotJson: JSON.stringify(snapshot), updatedByUserId: userId, updatedAt: new Date() } });
-  await appendAuditLog(userId, workspace.store.id, "snapshot_sync", "pos_snapshot", String(workspace.store.id), { version });
+  await appendAuditLog(userId, workspace.store.id, "snapshot_sync", "pos_snapshot", String(workspace.store.id), { version, baseVersion: currentVersion });
   return { version, storeId: workspace.store.id };
+}
+
+export async function listSnapshotBackupsForUser(userId: number, limit = 20) {
+  const workspace = await getWorkspaceForUser(userId);
+  if (!workspace) return [];
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ id: snapshotBackups.id, sourceVersion: snapshotBackups.sourceVersion, createdAt: snapshotBackups.createdAt }).from(snapshotBackups).where(eq(snapshotBackups.storeId, workspace.store.id)).orderBy(desc(snapshotBackups.id)).limit(Math.min(Math.max(limit, 1), 100));
+}
+
+export async function restoreSnapshotBackupForUser(userId: number, backupId: number) {
+  const workspace = await ensureWorkspaceForUser(userId);
+  if (!workspace) throw new Error("Cloud database is not available");
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  const backup = (await db.select().from(snapshotBackups).where(and(eq(snapshotBackups.id, backupId), eq(snapshotBackups.storeId, workspace.store.id))).limit(1))[0];
+  if (!backup) throw new Error("Không tìm thấy bản sao lưu trong workspace này.");
+  const current = (await db.select().from(posSnapshots).where(eq(posSnapshots.storeId, workspace.store.id)).limit(1))[0];
+  const version = (current?.version ?? 0) + 1;
+  if (current) await db.insert(snapshotBackups).values({ storeId: workspace.store.id, sourceVersion: current.version, snapshotJson: current.snapshotJson, createdByUserId: userId });
+  await db.insert(posSnapshots).values({ storeId: workspace.store.id, version, snapshotJson: backup.snapshotJson, updatedByUserId: userId }).onDuplicateKeyUpdate({ set: { version, snapshotJson: backup.snapshotJson, updatedByUserId: userId, updatedAt: new Date() } });
+  await appendAuditLog(userId, workspace.store.id, "snapshot_restore", "pos_snapshot", String(workspace.store.id), { version, restoredFrom: backup.sourceVersion });
+  return { version, storeId: workspace.store.id, snapshot: JSON.parse(backup.snapshotJson) as Record<string, unknown> };
 }
 
 export async function appendAuditLog(actorUserId: number, storeId: number, action: string, entityType: string, entityId?: string, metadata?: Record<string, unknown>) {

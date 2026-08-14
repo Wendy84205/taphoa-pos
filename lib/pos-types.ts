@@ -95,12 +95,31 @@ export type Supplier = {
   createdAt: string;
 };
 
+export type StockReceiptItem = {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitCost: number;
+  expiresAt?: string;
+};
+
 export type StockReceipt = {
   id: string;
   supplierId?: string;
   supplierName?: string;
+  items: StockReceiptItem[];
   totalAmount: number;
+  paidAmount: number;
   debtAmount: number;
+  note?: string;
+  createdAt: string;
+};
+
+export type SupplierPayment = {
+  id: string;
+  supplierId: string;
+  amount: number;
+  note: string;
   createdAt: string;
 };
 
@@ -112,7 +131,20 @@ export type ExpiryBatch = {
   createdAt: string;
 };
 
-export type InventoryActivityType = "import" | "adjustment" | "sale" | "initial" | "update";
+export type Shift = {
+  id: string;
+  openedAt: string;
+  closedAt?: string;
+  openingCash: number;
+  expectedCash?: number;
+  actualCash?: number;
+  cashDifference?: number;
+  totalRevenue?: number;
+  orderCount?: number;
+  note?: string;
+};
+
+export type InventoryActivityType = "import" | "adjustment" | "sale" | "initial" | "update" | "receipt";
 
 export type InventoryActivity = {
   id: string;

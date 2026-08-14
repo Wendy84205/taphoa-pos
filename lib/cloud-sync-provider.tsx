@@ -3,7 +3,7 @@ import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef, 
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
 import { usePosStore } from "@/lib/pos-store";
-import type { Customer, DebtTransaction, InventoryActivity, Order, PaymentSettings, Product } from "@/lib/pos-types";
+import type { Customer, DebtTransaction, ExpiryBatch, InventoryActivity, Order, PaymentSettings, Product, Shift, StockReceipt, Supplier, SupplierPayment } from "@/lib/pos-types";
 
 type CloudSnapshot = {
   products: Product[];
@@ -12,6 +12,11 @@ type CloudSnapshot = {
   customers: Customer[];
   debtTransactions: DebtTransaction[];
   paymentSettings: PaymentSettings;
+  suppliers: Supplier[];
+  stockReceipts: StockReceipt[];
+  supplierPayments: SupplierPayment[];
+  expiryBatches: ExpiryBatch[];
+  shifts: Shift[];
 };
 
 type CloudSyncStatus = "local" | "loading" | "synced" | "syncing" | "error";
@@ -26,6 +31,11 @@ function toSnapshot(state: Pick<CloudSnapshot, keyof CloudSnapshot>): CloudSnaps
     customers: state.customers,
     debtTransactions: state.debtTransactions,
     paymentSettings: state.paymentSettings,
+    suppliers: state.suppliers,
+    stockReceipts: state.stockReceipts,
+    supplierPayments: state.supplierPayments,
+    expiryBatches: state.expiryBatches,
+    shifts: state.shifts,
   };
 }
 
@@ -35,7 +45,7 @@ function snapshotSignature(snapshot: CloudSnapshot) {
 
 export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { initialized, products, orders, inventoryActivities, customers, debtTransactions, paymentSettings, replaceRemoteState } = usePosStore();
+  const { initialized, products, orders, inventoryActivities, customers, debtTransactions, paymentSettings, suppliers, stockReceipts, supplierPayments, expiryBatches, shifts, replaceRemoteState } = usePosStore();
   const workspaceQuery = trpc.workspace.me.useQuery(undefined, { enabled: isAuthenticated && initialized, retry: false });
   const snapshotQuery = trpc.workspace.snapshot.get.useQuery(undefined, { enabled: isAuthenticated && initialized && Boolean(workspaceQuery.data), retry: false });
   const pushSnapshot = trpc.workspace.snapshot.push.useMutation();
@@ -43,9 +53,10 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const [remoteReady, setRemoteReady] = useState(false);
   const [status, setStatus] = useState<CloudSyncStatus>("local");
   const latestSignature = useRef("");
+  const remoteVersion = useRef(0);
   const skipFirstPush = useRef(true);
 
-  const localSnapshot = useMemo(() => toSnapshot({ products, orders, inventoryActivities, customers, debtTransactions, paymentSettings }), [customers, debtTransactions, inventoryActivities, orders, paymentSettings, products]);
+  const localSnapshot = useMemo(() => toSnapshot({ products, orders, inventoryActivities, customers, debtTransactions, paymentSettings, suppliers, stockReceipts, supplierPayments, expiryBatches, shifts }), [customers, debtTransactions, expiryBatches, inventoryActivities, orders, paymentSettings, products, shifts, stockReceipts, supplierPayments, suppliers]);
 
   useEffect(() => {
     if (authLoading || !isAuthenticated || !initialized) {
@@ -73,11 +84,18 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
           customers: remote.customers ?? [],
           debtTransactions: remote.debtTransactions ?? [],
           paymentSettings: remote.paymentSettings ?? { bankBin: "", accountNumber: "", accountName: "" },
+          suppliers: remote.suppliers ?? [],
+          stockReceipts: remote.stockReceipts ?? [],
+          supplierPayments: remote.supplierPayments ?? [],
+          expiryBatches: remote.expiryBatches ?? [],
+          shifts: remote.shifts ?? [],
         };
         replaceRemoteState({ ...hydrated, cart: [] });
         latestSignature.current = snapshotSignature(hydrated);
+        remoteVersion.current = snapshotQuery.data?.version ?? 0;
       } else {
         latestSignature.current = snapshotSignature(localSnapshot);
+        remoteVersion.current = snapshotQuery.data?.version ?? 0;
       }
       skipFirstPush.current = true;
       setRemoteReady(true);
@@ -97,9 +115,13 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     if (nextSignature === latestSignature.current) return;
     const timer = setTimeout(() => {
       setStatus("syncing");
-      pushSnapshot.mutate({ snapshot: localSnapshot }, {
-        onSuccess: () => { latestSignature.current = nextSignature; setSyncError(null); setStatus("synced"); },
-        onError: () => { setSyncError("Không thể đồng bộ lên cloud. Dữ liệu trên máy vẫn được giữ nguyên."); setStatus("error"); },
+      pushSnapshot.mutate({ snapshot: localSnapshot, clientVersion: remoteVersion.current }, {
+        onSuccess: (result) => { latestSignature.current = nextSignature; remoteVersion.current = result.version; setSyncError(null); setStatus("synced"); },
+        onError: (error) => {
+          if (error.data?.code === "CONFLICT") setSyncError("Cloud vừa được cập nhật trên thiết bị khác. Hãy làm mới để tải bản mới trước khi tiếp tục.");
+          else setSyncError("Không thể đồng bộ lên cloud. Dữ liệu trên máy vẫn được giữ nguyên.");
+          setStatus("error");
+        },
       });
     }, 900);
     return () => clearTimeout(timer);

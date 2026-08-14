@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Tra cứu", icon: "search" as const, hint: "F2", group: "Bán hàng" },
   { href: "/ban-hang", label: "Bán hàng", icon: "shopping-cart" as const, hint: "F4", group: "Bán hàng" },
   { href: "/san-pham", label: "Sản phẩm", icon: "inventory-2" as const, group: "Quản lý" },
+  { href: "/van-hanh", label: "Vận hành", icon: "local-shipping" as const, group: "Quản lý" },
   { href: "/lich-su", label: "Hóa đơn", icon: "receipt-long" as const, group: "Quản lý" },
   { href: "/bao-cao", label: "Báo cáo", icon: "bar-chart" as const, group: "Quản lý" },
   { href: "/cong-no", label: "Công nợ", icon: "menu-book" as const, group: "Quản lý" },

@@ -1,10 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
-import { deleteLanProduct, getLanSnapshot, getLanWebSocketUrl, pairLanServer, postLanOrder, putLanProduct } from "@/lib/lan-client";
+import { getLanSnapshot, getLanWebSocketUrl, pairLanServer, putLanState } from "@/lib/lan-client";
 import type { LanConnection, LanPairingData } from "@/lib/lan-types";
 import { usePosStore } from "@/lib/pos-store";
-import type { Order, Product } from "@/lib/pos-types";
+import type { Customer, DebtTransaction, ExpiryBatch, InventoryActivity, Order, PaymentSettings, Product, Shift, StockReceipt, Supplier, SupplierPayment } from "@/lib/pos-types";
 
 const STORAGE_KEY = "taphoa-pos-lan-connection-v1";
 
@@ -24,7 +24,7 @@ function toProductMap(products: Product[]) { return new Map(products.map((produc
 function toOrderMap(orders: Order[]) { return new Map(orders.map((order) => [order.id, JSON.stringify(order)])); }
 
 export function LanSyncProvider({ children }: { children: ReactNode }) {
-  const { products, orders, initialized, replaceRemoteSnapshot } = usePosStore();
+  const { products, orders, inventoryActivities, customers, debtTransactions, paymentSettings, suppliers, stockReceipts, supplierPayments, expiryBatches, shifts, initialized, replaceRemoteState } = usePosStore();
   const [connection, setConnection] = useState<LanConnection | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -34,16 +34,16 @@ export function LanSyncProvider({ children }: { children: ReactNode }) {
   const socket = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const connectionRef = useRef<LanConnection | null>(null);
-  const latestDataRef = useRef({ products, orders });
-  const replaceSnapshotRef = useRef(replaceRemoteSnapshot);
+  const latestDataRef = useRef({ products, orders, inventoryActivities, customers, debtTransactions, paymentSettings, suppliers, stockReceipts, supplierPayments, expiryBatches, shifts });
+  const replaceStateRef = useRef(replaceRemoteState);
 
   useEffect(() => {
-    latestDataRef.current = { products, orders };
-  }, [orders, products]);
+    latestDataRef.current = { products, orders, inventoryActivities, customers, debtTransactions, paymentSettings, suppliers, stockReceipts, supplierPayments, expiryBatches, shifts };
+  }, [customers, debtTransactions, expiryBatches, inventoryActivities, orders, paymentSettings, products, shifts, stockReceipts, supplierPayments, suppliers]);
 
   useEffect(() => {
-    replaceSnapshotRef.current = replaceRemoteSnapshot;
-  }, [replaceRemoteSnapshot]);
+    replaceStateRef.current = replaceRemoteState;
+  }, [replaceRemoteState]);
 
   const setBaseline = useCallback((nextProducts: Product[], nextOrders: Order[]) => {
     previousProducts.current = toProductMap(nextProducts);
@@ -57,7 +57,8 @@ export function LanSyncProvider({ children }: { children: ReactNode }) {
     try {
       const snapshot = await getLanSnapshot(activeConnection);
       setBaseline(snapshot.products, snapshot.orders);
-      replaceSnapshotRef.current(snapshot.products, snapshot.orders);
+      const remoteState = snapshot.state ?? snapshot;
+      replaceStateRef.current({ ...(remoteState as any), cart: [] });
       setLastError(null);
     } catch (error) {
       setLastError(error instanceof Error ? error.message : "Không thể đồng bộ dữ liệu LAN.");
@@ -65,7 +66,7 @@ export function LanSyncProvider({ children }: { children: ReactNode }) {
     } finally {
       setSyncing(false);
     }
-  }, [replaceRemoteSnapshot, setBaseline]);
+  }, [setBaseline]);
 
   const closeSocket = useCallback(() => {
     if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
@@ -93,14 +94,14 @@ export function LanSyncProvider({ children }: { children: ReactNode }) {
     const snapshot = await getLanSnapshot(nextConnection);
     const local = latestDataRef.current;
     if (snapshot.products.length === 0 && snapshot.orders.length === 0 && (local.products.length > 0 || local.orders.length > 0)) {
-      for (const product of local.products) await putLanProduct(nextConnection, product);
-      for (const order of local.orders) await postLanOrder(nextConnection, order);
+      await putLanState(nextConnection, local);
       const uploaded = await getLanSnapshot(nextConnection);
       setBaseline(uploaded.products, uploaded.orders);
-      replaceSnapshotRef.current(uploaded.products, uploaded.orders);
+      replaceStateRef.current({ ...((uploaded.state ?? uploaded) as any), cart: [] });
     } else {
       setBaseline(snapshot.products, snapshot.orders);
-      replaceSnapshotRef.current(snapshot.products, snapshot.orders);
+      const remoteState = snapshot.state ?? snapshot;
+      replaceStateRef.current({ ...(remoteState as any), cart: [] });
     }
     openSocket(nextConnection);
     setLastError(null);
@@ -139,21 +140,9 @@ export function LanSyncProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const activeConnection = connectionRef.current;
     if (!activeConnection || !initialized) return;
-    const nextProducts = toProductMap(products);
-    const beforeProducts = previousProducts.current;
-    products.filter((product) => beforeProducts.get(product.id) !== nextProducts.get(product.id)).forEach((product) => putLanProduct(activeConnection, product).catch((error) => setLastError(error.message)));
-    Array.from(beforeProducts.keys()).filter((id) => !nextProducts.has(id)).forEach((id) => deleteLanProduct(activeConnection, id).catch((error) => setLastError(error.message)));
-    previousProducts.current = nextProducts;
-  }, [initialized, products]);
-
-  useEffect(() => {
-    const activeConnection = connectionRef.current;
-    if (!activeConnection || !initialized) return;
-    const nextOrders = toOrderMap(orders);
-    const beforeOrders = previousOrders.current;
-    orders.filter((order) => beforeOrders.get(order.id) !== nextOrders.get(order.id)).forEach((order) => postLanOrder(activeConnection, order).catch((error) => setLastError(error.message)));
-    previousOrders.current = nextOrders;
-  }, [initialized, orders]);
+    const timer = setTimeout(() => putLanState(activeConnection, latestDataRef.current).catch((error) => setLastError(error.message)), 700);
+    return () => clearTimeout(timer);
+  }, [customers, debtTransactions, expiryBatches, initialized, inventoryActivities, orders, paymentSettings, products, shifts, stockReceipts, supplierPayments, suppliers]);
 
   const value = useMemo<LanContextValue>(() => ({ loading, syncing, connection, lastError, connect, refresh, disconnect }), [connect, connection, disconnect, lastError, loading, refresh, syncing]);
   return <LanContext.Provider value={value}>{children}</LanContext.Provider>;

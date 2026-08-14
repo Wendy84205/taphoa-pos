@@ -39,6 +39,10 @@ export function postLanOrder(connection: LanConnection, order: Order) {
   return lanRequest<{ ok: true }>(connection.serverUrl, "/orders", { method: "POST", token: connection.token, body: order });
 }
 
+export function putLanState(connection: LanConnection, state: Record<string, unknown>) {
+  return lanRequest<{ ok: true; updatedAt: string }>(connection.serverUrl, "/state", { method: "PUT", token: connection.token, body: state });
+}
+
 export function getLanWebSocketUrl(connection: LanConnection) {
   const url = new URL(connection.serverUrl);
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";

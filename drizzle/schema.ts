@@ -74,6 +74,19 @@ export const posSnapshots = mysqlTable("posSnapshots", {
 export type PosSnapshot = typeof posSnapshots.$inferSelect;
 export type InsertPosSnapshot = typeof posSnapshots.$inferInsert;
 
+/** Lịch sử snapshot bất biến để chủ quán có thể khôi phục dữ liệu cloud. */
+export const snapshotBackups = mysqlTable("snapshotBackups", {
+  id: int("id").autoincrement().primaryKey(),
+  storeId: int("storeId").notNull(),
+  sourceVersion: int("sourceVersion").notNull(),
+  snapshotJson: text("snapshotJson").notNull(),
+  createdByUserId: int("createdByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SnapshotBackup = typeof snapshotBackups.$inferSelect;
+export type InsertSnapshotBackup = typeof snapshotBackups.$inferInsert;
+
 export const auditLogs = mysqlTable("auditLogs", {
   id: int("id").autoincrement().primaryKey(),
   storeId: int("storeId").notNull(),

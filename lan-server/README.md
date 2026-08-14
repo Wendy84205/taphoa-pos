@@ -1,6 +1,6 @@
 # Máy chủ LAN Tạp Hóa POS
 
-Thư mục này chạy trên **laptop tại quán**. Máy chủ lưu sản phẩm và hóa đơn vào tệp SQLite ngay trên laptop, hiển thị mã QR để các điện thoại trong cùng Wi‑Fi ghép nối, đồng thời phát thông báo WebSocket khi dữ liệu thay đổi.
+Thư mục này chạy trên **laptop tại quán**. Máy chủ lưu snapshot POS đầy đủ vào tệp SQLite ngay trên laptop, gồm sản phẩm, hóa đơn, khách hàng, công nợ, nhà cung cấp, phiếu nhập, lô hạn dùng, cấu hình thanh toán và ca bán hàng. Máy chủ hiển thị mã QR để các điện thoại trong cùng Wi‑Fi ghép nối, đồng thời phát thông báo WebSocket khi dữ liệu thay đổi.
 
 ## Chuẩn bị lần đầu
 
@@ -15,6 +15,6 @@ Khi thấy địa chỉ dạng `http://192.168.x.x:8765`, mở địa chỉ đó
 
 ## Vận hành an toàn
 
-Giữ cửa sổ Terminal đang chạy trong thời gian bán hàng và đặt laptop ở chế độ không ngủ. Tệp dữ liệu là `taphoa-pos-lan.sqlite` trong thư mục này; hãy sao chép tệp đó định kỳ sang USB hoặc ổ đĩa khác để sao lưu. Mã ghép sẽ thay đổi mỗi lần khởi động máy chủ, trừ khi bạn đặt biến môi trường `TAPHOA_PAIR_CODE`.
+Giữ cửa sổ Terminal đang chạy trong thời gian bán hàng và đặt laptop ở chế độ không ngủ. Tệp dữ liệu là `taphoa-pos-lan.sqlite` trong thư mục này; hãy dừng máy chủ rồi sao chép tệp đó định kỳ sang USB hoặc ổ đĩa khác để sao lưu. Trên ứng dụng, chủ quán cũng có thể xuất/khôi phục backup JSON ở màn Tài khoản. Mã ghép sẽ thay đổi mỗi lần khởi động máy chủ, trừ khi bạn đặt biến môi trường `TAPHOA_PAIR_CODE`.
 
 > Không mở cổng 8765 ra Internet. Máy chủ này được thiết kế chỉ để dùng trong Wi‑Fi nội bộ của quán.

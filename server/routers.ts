@@ -110,7 +110,24 @@ export const appRouter = router({
         const workspace = await db.ensureWorkspaceForUser(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể mở quán." });
         if (workspace.membership.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Nhân viên chưa được phép ghi đè dữ liệu kho trên cloud." });
-        return db.upsertSnapshotForUser(ctx.user.id, input.snapshot);
+        try {
+          return await db.upsertSnapshotForUser(ctx.user.id, input.snapshot, input.clientVersion);
+        } catch (error) {
+          if (error instanceof db.SnapshotConflictError) throw new TRPCError({ code: "CONFLICT", message: error.message, cause: { currentVersion: error.currentVersion } });
+          throw error;
+        }
+      }),
+      backups: protectedProcedure.query(async ({ ctx }) => {
+        const workspace = await db.ensureWorkspaceForUser(ctx.user.id);
+        if (!workspace) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể mở quán." });
+        if (workspace.membership.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ chủ quán được xem backup." });
+        return db.listSnapshotBackupsForUser(ctx.user.id);
+      }),
+      restore: protectedProcedure.input(z.object({ backupId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+        const workspace = await db.ensureWorkspaceForUser(ctx.user.id);
+        if (!workspace) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể mở quán." });
+        if (workspace.membership.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ chủ quán được khôi phục backup." });
+        return db.restoreSnapshotBackupForUser(ctx.user.id, input.backupId);
       }),
     }),
   }),

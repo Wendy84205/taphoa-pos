@@ -4,6 +4,8 @@ import * as Sharing from "expo-sharing";
 import { Platform } from "react-native";
 import * as XLSX from "xlsx";
 
+import type { Order, Product } from "@/lib/pos-types";
+
 type ExportRow = Record<string, string | number | null | undefined>;
 
 function escapeHtml(value: unknown) {
@@ -34,6 +36,49 @@ export async function exportRowsToExcel(filename: string, rows: ExportRow[]) {
   const uri = `${FileSystem.cacheDirectory}${filename}`;
   await FileSystem.writeAsStringAsync(uri, base64, { encoding: FileSystem.EncodingType.Base64 });
   if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", dialogTitle: "Chia sẻ file Excel" });
+}
+
+export async function exportJsonBackup(filename: string, payload: unknown) {
+  const content = JSON.stringify({ format: "taphoa-pos-backup", version: 1, exportedAt: new Date().toISOString(), payload }, null, 2);
+  if (Platform.OS === "web") {
+    downloadWeb(filename, new Blob([content], { type: "application/json" }), "application/json");
+    return;
+  }
+  const uri = `${FileSystem.documentDirectory}${filename}`;
+  await FileSystem.writeAsStringAsync(uri, content, { encoding: FileSystem.EncodingType.UTF8 });
+  if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: "application/json", dialogTitle: "Chia sẻ bản sao lưu" });
+}
+
+export async function readJsonBackup(uri: string) {
+  const content = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.UTF8 });
+  const parsed = JSON.parse(content) as { format?: string; version?: number; payload?: unknown };
+  if (parsed.format !== "taphoa-pos-backup" || !parsed.payload) throw new Error("Tệp backup không đúng định dạng Tạp Hóa POS.");
+  return parsed.payload;
+}
+
+function printWebHtml(html: string) {
+  if (typeof window === "undefined") return false;
+  const printWindow = window.open("", "_blank", "width=720,height=900");
+  if (!printWindow) return false;
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  return true;
+}
+
+export async function printOrderReceipt(order: Order, storeName = "Tạp Hóa POS") {
+  const rows = order.items.map((item) => `<tr><td>${escapeHtml(item.name)}<br/><small>${item.quantity} ${escapeHtml(item.unit)} × ${item.priceAtSale.toLocaleString("vi-VN")}đ</small></td><td>${(item.quantity * item.priceAtSale).toLocaleString("vi-VN")}đ</td></tr>`).join("");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>@page{size:80mm auto;margin:5mm}body{font-family:Arial,sans-serif;width:72mm;color:#17251d;font-size:12px}h1{text-align:center;font-size:18px;margin:0 0 4px}p{text-align:center;margin:3px 0;color:#536358;font-size:10px}table{width:100%;border-collapse:collapse;margin-top:10px}td{padding:5px 0;border-bottom:1px dashed #ccd6cd}td:last-child{text-align:right;font-weight:700}small{color:#68776d}.total{display:flex;justify-content:space-between;font-size:16px;font-weight:800;padding-top:10px}</style></head><body><h1>${escapeHtml(storeName)}</h1><p>Hóa đơn ${escapeHtml(order.id)}</p><p>${escapeHtml(new Date(order.createdAt).toLocaleString("vi-VN"))}</p><table>${rows}</table><div class="total"><span>Tổng</span><span>${order.totalAmount.toLocaleString("vi-VN")}đ</span></div><p>Cảm ơn quý khách!</p></body></html>`;
+  if (Platform.OS === "web") { if (!printWebHtml(html)) throw new Error("Trình duyệt đã chặn cửa sổ in."); return; }
+  await Print.printAsync({ html, width: 302, margins: { top: 12, bottom: 12, left: 12, right: 12 } });
+}
+
+export async function printPriceLabels(products: Product[]) {
+  const rows = products.map((product) => `<div class="label"><strong>${escapeHtml(product.name)}</strong><span>${product.price.toLocaleString("vi-VN")}đ / ${escapeHtml(product.unit)}</span>${product.barcode ? `<small>${escapeHtml(product.barcode)}</small>` : ""}</div>`).join("");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>@page{margin:8mm}body{font-family:Arial,sans-serif;display:grid;grid-template-columns:repeat(3,1fr);gap:6mm}.label{border:1px dashed #59665d;padding:7mm 4mm;text-align:center;display:grid;gap:3mm;break-inside:avoid}.label strong{font-size:13px}.label span{font-size:18px;font-weight:800}.label small{font-size:10px;color:#68776d}</style></head><body>${rows || "<p>Chưa có sản phẩm</p>"}</body></html>`;
+  if (Platform.OS === "web") { if (!printWebHtml(html)) throw new Error("Trình duyệt đã chặn cửa sổ in."); return; }
+  await Print.printAsync({ html, margins: { top: 16, bottom: 16, left: 16, right: 16 } });
 }
 
 export async function exportRowsToPdf(filename: string, title: string, rows: ExportRow[]) {

@@ -44,6 +44,11 @@ async function main() {
     const snapshotResponse = await fetch(`http://127.0.0.1:${port}/snapshot`, { headers: { "X-Device-Token": pair.token } });
     const snapshot = await snapshotResponse.json();
     if (snapshot.products?.[0]?.id !== "p-smoke") throw new Error("SQLite không trả về dữ liệu vừa lưu.");
+    const fullState = { products: [product], orders: [], inventoryActivities: [], customers: [{ id: "cus-smoke", name: "Khách LAN", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }], debtTransactions: [], paymentSettings: { bankBin: "", accountNumber: "", accountName: "" }, suppliers: [], stockReceipts: [], supplierPayments: [], expiryBatches: [{ id: "exp-smoke", productId: product.id, quantity: 2, expiresAt: "2026-12-31", createdAt: new Date().toISOString() }], shifts: [] };
+    const stateResponse = await fetch(`http://127.0.0.1:${port}/state`, { method: "PUT", headers: { "Content-Type": "application/json", "X-Device-Token": pair.token }, body: JSON.stringify(fullState) });
+    if (!stateResponse.ok) throw new Error("Không lưu được full-state qua LAN.");
+    const fullSnapshot = await (await fetch(`http://127.0.0.1:${port}/snapshot`, { headers: { "X-Device-Token": pair.token } })).json();
+    if (fullSnapshot.state?.customers?.[0]?.id !== "cus-smoke" || fullSnapshot.state?.expiryBatches?.[0]?.id !== "exp-smoke") throw new Error("Full-state LAN không bảo toàn dữ liệu vận hành.");
     client.close();
     console.log("LAN smoke test passed");
   } finally {

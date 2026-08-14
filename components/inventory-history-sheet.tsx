@@ -9,8 +9,8 @@ type Props = { visible: boolean; products: Product[]; activities: InventoryActiv
 type Filter = InventoryActivityFilter;
 
 const FILTERS: { key: Filter; label: string }[] = [{ key: "all", label: "Tất cả" }, { key: "import", label: "Nhập hàng" }, { key: "adjustment", label: "Điều chỉnh" }, { key: "sale", label: "Bán hàng" }, { key: "initial", label: "Tạo mới" }];
-const TYPE_LABEL: Record<InventoryActivityType, string> = { import: "Nhập hàng", adjustment: "Điều chỉnh", sale: "Bán hàng", initial: "Tạo mới", update: "Cập nhật" };
-const TYPE_ICON: Record<InventoryActivityType, React.ComponentProps<typeof MaterialIcons>["name"]> = { import: "add-box", adjustment: "tune", sale: "shopping-cart", initial: "add-circle", update: "edit" };
+const TYPE_LABEL: Record<InventoryActivityType, string> = { import: "Nhập hàng", adjustment: "Điều chỉnh", sale: "Bán hàng", initial: "Tạo mới", update: "Cập nhật", receipt: "Phiếu nhập" };
+const TYPE_ICON: Record<InventoryActivityType, React.ComponentProps<typeof MaterialIcons>["name"]> = { import: "add-box", adjustment: "tune", sale: "shopping-cart", initial: "add-circle", update: "edit", receipt: "local-shipping" };
 
 function formatDate(iso: string) { return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso)); }
 

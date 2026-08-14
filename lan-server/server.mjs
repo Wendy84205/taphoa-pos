@@ -26,6 +26,11 @@ db.exec(`
     payload TEXT NOT NULL,
     createdAt TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS pos_state (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    payload TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+  );
 `);
 
 function getLanAddress() {
@@ -44,13 +49,14 @@ function publicUrl(request) {
 }
 
 function snapshot() {
+  const stateRow = db.prepare("SELECT payload, updatedAt FROM pos_state WHERE id = 1").get();
   const productRows = db.prepare("SELECT payload FROM products ORDER BY updatedAt DESC").all();
   const orderRows = db.prepare("SELECT payload FROM orders ORDER BY createdAt DESC").all();
-  return {
-    products: productRows.map((row) => JSON.parse(row.payload)),
-    orders: orderRows.map((row) => JSON.parse(row.payload)),
-    updatedAt: new Date().toISOString(),
-  };
+  if (stateRow) {
+    const state = JSON.parse(stateRow.payload);
+    return { ...state, products: state.products ?? [], orders: state.orders ?? [], state, updatedAt: stateRow.updatedAt };
+  }
+  return { products: productRows.map((row) => JSON.parse(row.payload)), orders: orderRows.map((row) => JSON.parse(row.payload)), updatedAt: new Date().toISOString() };
 }
 
 function json(response, status, body) {
@@ -110,6 +116,15 @@ const server = createServer(async (request, response) => {
     if (!isAuthorized(request)) return json(response, 401, { error: "Thiết bị chưa được ghép nối." });
 
     if (request.method === "GET" && url.pathname === "/snapshot") return json(response, 200, snapshot());
+
+    if (request.method === "PUT" && url.pathname === "/state") {
+      const state = await readJson(request);
+      if (!state || !Array.isArray(state.products) || !Array.isArray(state.orders)) return json(response, 400, { error: "Snapshot POS không hợp lệ." });
+      const updatedAt = new Date().toISOString();
+      db.prepare("INSERT INTO pos_state (id, payload, updatedAt) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload, updatedAt=excluded.updatedAt").run(JSON.stringify(state), updatedAt);
+      broadcast("state.changed", "pos");
+      return json(response, 200, { ok: true, updatedAt });
+    }
 
     if (request.method === "PUT" && url.pathname.startsWith("/products/")) {
       const product = await readJson(request);

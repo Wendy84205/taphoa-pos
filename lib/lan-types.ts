@@ -14,6 +14,7 @@ export type LanSnapshot<TProduct, TOrder> = {
   products: TProduct[];
   orders: TOrder[];
   updatedAt: string;
+  state?: Record<string, unknown>;
 };
 
 export function normalizeLanServerUrl(value: string) {

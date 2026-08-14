@@ -146,3 +146,23 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Hoàn thiện xuất báo cáo/công nợ ra Excel và PDF.
 - [x] Lưu checkpoint Website hoàn thiện và cập nhật GitHub.
 - [x] Lưu checkpoint landing enhancements và cập nhật GitHub.
+
+## Phạm vi triển khai sau rà soát (bỏ qua OTP/SMS)
+
+- [ ] Hoàn thiện tài liệu biến môi trường và mapping triển khai cloud production.
+- [x] Bổ sung backup/khôi phục dữ liệu POS thủ công và cloud.
+- [x] Bổ sung conflict resolution và đồng bộ nhiều thiết bị an toàn theo tenant.
+- [ ] Bổ sung kiểm thử cô lập dữ liệu giữa tenant và quyền owner/staff.
+- [x] Kiểm thử nhiều thiết bị trong cùng Wi‑Fi và hoàn thiện hướng dẫn LAN.
+- [x] Hoàn thiện quản lý lô nhập, hạn sử dụng và cảnh báo hàng cận date.
+- [x] Hoàn thiện nhà cung cấp, phiếu nhập, giá vốn trung bình và công nợ nhà cung cấp.
+- [x] Bổ sung đóng ca, kiểm tiền mặt thực tế và báo cáo chênh lệch.
+- [ ] Bổ sung xác nhận chuyển khoản/reconciliation có kiểm soát.
+- [x] Bổ sung in hóa đơn và tem giá qua luồng in phù hợp Web/mobile.
+- [ ] Bổ sung mời nhân viên, khóa thành viên và audit log UI.
+- [ ] Bổ sung khuyến mãi và combo bán hàng.
+- [ ] Kiểm thử production trên trình duyệt, iOS và Android; cập nhật tài liệu bàn giao.
+
+> OTP/SMS và khôi phục mật khẩu qua SMS được chủ động giữ ngoài phạm vi triển khai ở giai đoạn này.
+
+> Subscription, nhiều chi nhánh, tìm kiếm giọng nói, đa ngôn ngữ và nhận diện AI giữ ở backlog thương mại hóa, chưa triển khai trong đợt này.
