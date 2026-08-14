@@ -24,6 +24,7 @@ type PosContextValue = PosState & {
   clearCart: () => void;
   checkout: (discount: number) => Order | null;
   getProductByBarcode: (barcode: string) => Product | undefined;
+  replaceRemoteSnapshot: (products: Product[], orders: Order[]) => void;
 };
 
 type Action =
@@ -35,7 +36,8 @@ type Action =
   | { type: "UPDATE_CART_QUANTITY"; productId: string; quantity: number }
   | { type: "REMOVE_FROM_CART"; productId: string }
   | { type: "CLEAR_CART" }
-  | { type: "CHECKOUT"; payload: { order: Order } };
+  | { type: "CHECKOUT"; payload: { order: Order } }
+  | { type: "REPLACE_REMOTE_SNAPSHOT"; payload: { products: Product[]; orders: Order[] } };
 
 const now = new Date().toISOString();
 const seedProducts: Product[] = [
@@ -117,6 +119,8 @@ function reducer(state: PosState, action: Action): PosState {
             : product;
         }),
       };
+    case "REPLACE_REMOTE_SNAPSHOT":
+      return { ...state, products: action.payload.products, orders: action.payload.orders };
     default:
       return state;
   }
@@ -171,6 +175,7 @@ export function PosStoreProvider({ children }: { children: ReactNode }) {
       return order;
     },
     getProductByBarcode: (barcode) => state.products.find((product) => product.barcode === barcode),
+    replaceRemoteSnapshot: (products, orders) => dispatch({ type: "REPLACE_REMOTE_SNAPSHOT", payload: { products, orders } }),
   }), [state]);
 
   return <PosContext.Provider value={value}>{children}</PosContext.Provider>;

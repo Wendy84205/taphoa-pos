@@ -20,6 +20,19 @@ npx expo export --platform web --output-dir dist
 
 Để tạo APK Android hoặc phát hành bản chạy được, hãy tạo một checkpoint rồi dùng nút **Publish** trong giao diện quản lý dự án. Luồng này sẽ thực hiện quá trình build phù hợp với ứng dụng Expo mà không cần tự build APK trong môi trường phát triển.
 
+## Dùng laptop làm máy chủ trong Wi‑Fi nội bộ
+
+Nếu muốn điện thoại bán hàng và laptop dùng chung dữ liệu mà không cần Internet, hãy để **laptop tại quán** làm máy chủ. Trên laptop, cài Node.js 22 trở lên, mở Terminal/PowerShell tại thư mục `lan-server`, rồi chạy:
+
+```bash
+npm install
+npm start
+```
+
+Máy chủ sẽ hiển thị một địa chỉ dạng `http://192.168.x.x:8765`. Trên laptop, mở thêm địa chỉ đó kèm `/pairing` để hiện QR và mã ghép. Điện thoại và laptop phải cùng Wi‑Fi, sau đó mở tab **Kết nối** trong Tạp Hóa POS, quét QR hoặc nhập địa chỉ/mã ghép để liên kết. Khi đã liên kết, thay đổi sản phẩm, đơn hàng, tồn kho và báo cáo sẽ được thông báo tức thời qua Wi‑Fi nội bộ.
+
+Tệp SQLite `taphoa-pos-lan.sqlite` được lưu cạnh máy chủ LAN trên laptop. Hãy sao chép tệp này định kỳ sang USB hoặc ổ đĩa khác để sao lưu. Trong giờ bán hàng, không tắt cửa sổ Terminal và đặt laptop ở chế độ không ngủ. Máy chủ LAN chỉ dùng trong Wi‑Fi quán; không mở cổng 8765 ra Internet.
+
 ## Dữ liệu và phạm vi MVP
 
 Phiên bản hiện tại lưu sản phẩm, giỏ hàng và hóa đơn trực tiếp trên thiết bị bằng **AsyncStorage**, nên các chức năng cốt lõi vẫn sử dụng được khi mất mạng. Dữ liệu mẫu chỉ nhằm giúp thao tác thử nhanh và có thể chỉnh sửa hoặc xóa từ màn **Sản phẩm**.

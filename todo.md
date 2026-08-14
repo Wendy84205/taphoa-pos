@@ -18,3 +18,9 @@
 - [x] Xuất lịch sử hóa đơn và chi tiết mặt hàng sang tệp CSV tương thích Excel.
 - [x] Kiểm thử báo cáo và tệp xuất CSV.
 - [x] Lưu phiên bản nâng cấp và bàn giao.
+- [x] Chốt mô hình thiết bị chủ và kiến trúc hoạt động trong mạng LAN không cần Internet.
+- [x] Triển khai laptop tại quán làm máy chủ LAN lưu dữ liệu SQLite và phát QR kết nối.
+- [x] Thiết kế giao thức QR, phân quyền thiết bị và đồng bộ thời gian thực qua WebSocket.
+- [x] Xây dựng máy chủ LAN cùng kho dữ liệu dùng chung bằng SQLite và kiểm thử tự động.
+- [x] Kết nối ứng dụng bán hàng và giao diện web quản lý vào máy chủ LAN.
+- [ ] Kiểm thử nhiều thiết bị trong cùng Wi‑Fi, soạn hướng dẫn cài đặt và lưu phiên bản nâng cấp.

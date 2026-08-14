@@ -23,11 +23,12 @@ const config: ExpoConfig = {
   scheme: env.scheme,
   userInterfaceStyle: "light",
   newArchEnabled: true,
-  ios: { supportsTablet: true, bundleIdentifier: env.iosBundleId, infoPlist: { ITSAppUsesNonExemptEncryption: false } },
+  ios: { supportsTablet: true, bundleIdentifier: env.iosBundleId, infoPlist: { ITSAppUsesNonExemptEncryption: false, NSAppTransportSecurity: { NSAllowsLocalNetworking: true } } },
   android: { adaptiveIcon: { backgroundColor: "#F7F7F2", foregroundImage: "./assets/images/android-icon-foreground.png", backgroundImage: "./assets/images/android-icon-background.png", monochromeImage: "./assets/images/android-icon-monochrome.png" }, edgeToEdgeEnabled: true, predictiveBackGestureEnabled: false, package: env.androidPackage, permissions: ["POST_NOTIFICATIONS"], intentFilters: [{ action: "VIEW", autoVerify: true, data: [{ scheme: env.scheme, host: "*" }], category: ["BROWSABLE", "DEFAULT"] }] },
   web: { bundler: "metro", output: "static", favicon: "./assets/images/favicon.png" },
   plugins: [
     "expo-router",
+    "./plugins/with-lan-cleartext",
     ["expo-camera", { cameraPermission: "Cho phép $(PRODUCT_NAME) dùng camera để quét mã vạch sản phẩm." }],
     ["expo-image-picker", { photosPermission: "Cho phép $(PRODUCT_NAME) truy cập ảnh để gắn ảnh sản phẩm.", cameraPermission: "Cho phép $(PRODUCT_NAME) dùng camera để chụp ảnh sản phẩm." }],
     ["expo-splash-screen", { image: "./assets/images/splash-icon.png", imageWidth: 200, resizeMode: "contain", backgroundColor: "#F7F7F2", dark: { backgroundColor: "#131A15" } }],
