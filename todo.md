@@ -46,3 +46,5 @@
 - [x] Khôi phục bản xem trước POS để hoàn tất kiểm tra trực tiếp các tính năng sau khi khởi động lại.
 - [x] Ổn định bản xem trước POS bằng gói Web tĩnh để tránh Metro ngừng phản hồi trong lúc kiểm tra.
 - [x] Tạo commit và cập nhật toàn bộ thay đổi hoàn tất của Tạp Hóa POS lên GitHub.
+- [x] Kiểm tra giao diện Website POS và các luồng chính trên trình duyệt sau khi cập nhật GitHub.
+- [x] Khôi phục bản xem trước Website POS đang không khả dụng để hoàn tất kiểm tra giao diện.
