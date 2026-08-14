@@ -13,6 +13,7 @@ const snapshotSchema = z.record(z.string(), z.unknown());
 const credentialSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3), password: z.string().min(8), name: z.string().trim().min(1).max(120).optional() });
 const profileSchema = z.object({ name: z.string().trim().min(1).max(120), email: z.string().trim().email().optional().or(z.literal("")), phone: z.string().trim().optional() });
 const resetIdentifierSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3) });
+const staffCreateSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3), name: z.string().trim().min(1).max(120), password: z.string().min(8), pin: z.string().regex(/^\d{4,6}$/, "PIN cần 4–6 chữ số.") });
 
 function publicUser(user: NonNullable<Awaited<ReturnType<typeof db.getUserByOpenId>>>) {
   return { id: user.id, openId: user.openId, name: user.name, email: user.email, phone: user.phone, loginMethod: user.loginMethod, lastSignedIn: user.lastSignedIn };
@@ -77,6 +78,24 @@ export const appRouter = router({
     verifyPasswordResetOtp: publicProcedure.input(z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3), otp: z.string().regex(/^\d{6}$/), newPassword: z.string().min(8) })).mutation(async () => {
       throw new TRPCError({ code: "PRECONDITION_FAILED", message: "OTP SMS chưa được cấu hình nên chưa thể xác nhận mã." });
     }),
+    staffPinLogin: publicProcedure.input(z.object({ storeId: z.number().int().positive(), memberId: z.number().int().positive(), pin: z.string().regex(/^\d{4,6}$/) })).mutation(async ({ ctx, input }) => {
+      const store = await db.getStoreById(input.storeId);
+      if (!store || store.storeType !== "withStaff") throw new TRPCError({ code: "FORBIDDEN", message: "Quán này chưa bật chế độ Có nhân viên." });
+      const member = await db.getStoreMemberById(input.storeId, input.memberId);
+      if (!member || member.status !== "active" || !member.pinHash) throw new TRPCError({ code: "UNAUTHORIZED", message: "Không tìm thấy nhân viên hoặc PIN chưa được thiết lập." });
+      if (member.pinLockedUntil && member.pinLockedUntil.getTime() > Date.now()) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "PIN đang bị khóa tạm thời. Hãy thử lại sau." });
+      if (!verifyPassword(input.pin, member.pinHash)) {
+        const attempts = member.pinFailedAttempts + 1;
+        const lockedUntil = attempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
+        await db.updateStoreMemberPinState(member.id, { pinFailedAttempts: attempts, pinLockedUntil: lockedUntil });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: lockedUntil ? "PIN sai quá nhiều lần, đã khóa 15 phút." : "PIN không đúng." });
+      }
+      await db.updateStoreMemberPinState(member.id, { pinFailedAttempts: 0, pinLockedUntil: null });
+      const user = await db.getUserById(member.userId);
+      if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Tài khoản nhân viên không tồn tại." });
+      await db.appendAuditLog(user.id, input.storeId, "staff_pin_login", "store_member", String(member.id));
+      return establishCredentialsSession(ctx, user);
+    }),
     credentialsLogin: publicProcedure.input(credentialSchema.omit({ name: true })).mutation(async ({ ctx, input }) => {
       const identifier = input.kind === "email" ? normalizeEmail(input.identifier) : normalizePhone(input.identifier);
       const user = input.kind === "email" ? await db.getUserByEmail(identifier) : await db.getUserByPhone(identifier);
@@ -97,6 +116,30 @@ export const appRouter = router({
       const workspace = await db.ensureWorkspaceForUser(ctx.user.id, ctx.user.name ? `Quầy của ${ctx.user.name}` : undefined);
       if (!workspace) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể mở dữ liệu quán trên cloud." });
       return workspace;
+    }),
+    updateStoreType: protectedProcedure.input(z.object({ storeType: z.enum(["solo", "withStaff"]) })).mutation(async ({ ctx, input }) => {
+      const updated = await db.updateStoreTypeForUser(ctx.user.id, input.storeType);
+      if (!updated) throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ chủ quán được đổi loại hình quán." });
+      return updated;
+    }),
+    staff: router({
+      create: protectedProcedure.input(staffCreateSchema).mutation(async ({ ctx, input }) => {
+        const identifier = input.kind === "email" ? normalizeEmail(input.identifier) : normalizePhone(input.identifier);
+        if (input.kind === "email" && !/^\S+@\S+\.\S+$/.test(identifier)) throw new TRPCError({ code: "BAD_REQUEST", message: "Email nhân viên chưa đúng định dạng." });
+        if (input.kind === "phone" && !validatePhone(identifier)) throw new TRPCError({ code: "BAD_REQUEST", message: "Số điện thoại nhân viên chưa đúng định dạng." });
+        const workspace = await db.ensureWorkspaceForUser(ctx.user.id);
+        if (!workspace || workspace.membership.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ chủ quán được tạo nhân viên." });
+        try {
+          const member = await db.createStoreStaff(ctx.user.id, { ...input, identifier, password: input.password, pinHash: hashPassword(input.pin) });
+          if (!member) throw new Error("Không thể tạo nhân viên.");
+          return member;
+        } catch (error) { throw new TRPCError({ code: "CONFLICT", message: error instanceof Error ? error.message : "Không thể tạo nhân viên." }); }
+      }),
+    }),
+    audit: protectedProcedure.query(async ({ ctx }) => {
+      const logs = await db.listAuditLogsForUser(ctx.user.id);
+      if (!logs) throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ chủ quán được xem nhật ký." });
+      return logs;
     }),
     members: protectedProcedure.query(async ({ ctx }) => {
       const workspace = await db.ensureWorkspaceForUser(ctx.user.id);

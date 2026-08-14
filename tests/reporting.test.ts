@@ -35,3 +35,11 @@ describe("báo cáo doanh thu và xuất CSV", () => {
     expect(csv.split("\r\n")).toHaveLength(4);
   });
 });
+
+  it("lọc đúng doanh thu theo nhân viên bán hàng", () => {
+    const staffOrders: Order[] = orders.map((order, index) => ({ ...order, sellerUserId: index === 0 ? 101 : 202, sellerName: index === 0 ? "Lan" : "Minh" }));
+    const report = createRevenueReport(staffOrders, "day", new Date("2026-08-14T12:00:00"), 101);
+    expect(report.totalRevenue).toBe(30000);
+    expect(report.orderCount).toBe(1);
+    expect(report.totalItems).toBe(4);
+  });

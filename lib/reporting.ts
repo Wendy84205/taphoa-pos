@@ -95,7 +95,7 @@ function buildEmptyBuckets(period: ReportPeriod, referenceDate: Date) {
   return buckets;
 }
 
-export function createRevenueReport(orders: Order[], period: ReportPeriod, referenceDate = new Date()): RevenueReport {
+export function createRevenueReport(orders: Order[], period: ReportPeriod, referenceDate = new Date(), sellerUserId?: number): RevenueReport {
   const buckets = buildEmptyBuckets(period, referenceDate);
   const bucketByKey = new Map(buckets.map((bucket) => [bucket.key, bucket]));
   const productMap = new Map<string, ProductPerformance>();
@@ -104,6 +104,7 @@ export function createRevenueReport(orders: Order[], period: ReportPeriod, refer
   let totalItems = 0;
 
   orders.forEach((order) => {
+    if (sellerUserId !== undefined && order.sellerUserId !== sellerUserId) return;
     const createdAt = new Date(order.createdAt);
     const bucket = bucketByKey.get(getBucketKey(createdAt, period));
     if (bucket) {

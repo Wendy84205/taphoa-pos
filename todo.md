@@ -159,10 +159,26 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Bổ sung đóng ca, kiểm tiền mặt thực tế và báo cáo chênh lệch.
 - [ ] Bổ sung xác nhận chuyển khoản/reconciliation có kiểm soát.
 - [x] Bổ sung in hóa đơn và tem giá qua luồng in phù hợp Web/mobile.
-- [ ] Bổ sung mời nhân viên, khóa thành viên và audit log UI.
+- [x] Bổ sung mời nhân viên, khóa thành viên và audit log UI.
 - [ ] Bổ sung khuyến mãi và combo bán hàng.
 - [ ] Kiểm thử production trên trình duyệt, iOS và Android; cập nhật tài liệu bàn giao.
 
 > OTP/SMS và khôi phục mật khẩu qua SMS được chủ động giữ ngoài phạm vi triển khai ở giai đoạn này.
 
 > Subscription, nhiều chi nhánh, tìm kiếm giọng nói, đa ngôn ngữ và nhận diện AI giữ ở backlog thương mại hóa, chưa triển khai trong đợt này.
+
+## MVP loại hình quán và nhân viên
+
+- [x] Thêm `stores.storeType` với hai giá trị `solo` và `withStaff`, giữ tương thích dữ liệu tenant cũ.
+- [x] Thêm onboarding chọn loại hình quán ngay sau đăng ký lần đầu.
+- [x] Cho phép đổi loại hình quán trong Cài đặt mà không mất dữ liệu.
+- [x] Ẩn tính năng mời nhân viên, phân quyền, đóng ca và audit log khi quán ở chế độ Solo.
+- [x] Hoàn thiện mời/tạo tài khoản nhân viên theo tenant và phân quyền owner/staff.
+- [x] Thêm đăng nhập nhanh bằng PIN 4–6 số cho nhân viên tại quầy.
+- [x] Bắt buộc owner xác nhận thao tác sửa giá/xóa hóa đơn khi WithStaff.
+- [x] Gắn người bán/nhân viên vào hóa đơn và hoạt động audit.
+- [x] Hoàn thiện đóng ca theo từng nhân viên và đối chiếu tiền mặt.
+- [x] Bổ sung audit log UI có lọc theo người dùng, hành động và thời gian.
+- [x] Bổ sung báo cáo doanh thu lọc/so sánh theo nhân viên khi WithStaff.
+- [x] Tối ưu mobile cho luồng PIN tại quầy và Web cho quản trị tổng thể.
+- [x] Viết kiểm thử tenant isolation, role guard, storeType gating và PIN login.

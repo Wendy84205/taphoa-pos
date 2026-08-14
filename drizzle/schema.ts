@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -39,6 +39,8 @@ export const stores = mysqlTable("stores", {
   name: varchar("name", { length: 255 }).notNull(),
   ownerUserId: int("ownerUserId").notNull(),
   subscriptionPlan: varchar("subscriptionPlan", { length: 32 }).default("free").notNull(),
+  storeType: mysqlEnum("storeType", ["solo", "withStaff"]).default("solo").notNull(),
+  storeSetupCompleted: boolean("storeSetupCompleted").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -53,12 +55,32 @@ export const storeMembers = mysqlTable("storeMembers", {
   userId: int("userId").notNull(),
   role: mysqlEnum("role", ["owner", "staff"]).default("staff").notNull(),
   status: mysqlEnum("status", ["active", "invited", "disabled"]).default("active").notNull(),
+  pinHash: text("pinHash"),
+  pinFailedAttempts: int("pinFailedAttempts").default(0).notNull(),
+  pinLockedUntil: timestamp("pinLockedUntil"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({ membershipUnique: uniqueIndex("store_members_store_user_unique").on(table.storeId, table.userId) }));
 
 export type StoreMember = typeof storeMembers.$inferSelect;
 export type InsertStoreMember = typeof storeMembers.$inferInsert;
+
+/** Lời mời nhân viên theo tenant, hỗ trợ email hoặc số điện thoại. */
+export const storeInvitations = mysqlTable("storeInvitations", {
+  id: int("id").autoincrement().primaryKey(),
+  storeId: int("storeId").notNull(),
+  identifier: varchar("identifier", { length: 320 }).notNull(),
+  kind: mysqlEnum("kind", ["email", "phone"]).notNull(),
+  role: mysqlEnum("role", ["staff"]).default("staff").notNull(),
+  status: mysqlEnum("status", ["pending", "accepted", "expired", "revoked"]).default("pending").notNull(),
+  tokenHash: text("tokenHash").notNull(),
+  createdByUserId: int("createdByUserId").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type StoreInvitation = typeof storeInvitations.$inferSelect;
+export type InsertStoreInvitation = typeof storeInvitations.$inferInsert;
 
 /** Snapshot JSON giúp giữ toàn bộ nghiệp vụ offline hiện tại trong giai đoạn cloud MVP. */
 export const posSnapshots = mysqlTable("posSnapshots", {

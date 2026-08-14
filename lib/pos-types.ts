@@ -46,6 +46,8 @@ export type Order = {
   customerName?: string;
   amountReceived?: number;
   debtAmount?: number;
+  sellerUserId?: number;
+  sellerName?: string;
 };
 
 export type PaymentMethod = "cash" | "bank_transfer" | "debt";
@@ -141,6 +143,8 @@ export type Shift = {
   cashDifference?: number;
   totalRevenue?: number;
   orderCount?: number;
+  sellerUserId?: number;
+  sellerName?: string;
   note?: string;
 };
 

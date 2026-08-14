@@ -1,0 +1,1 @@
+ALTER TABLE `stores` ADD `storeSetupCompleted` boolean DEFAULT false NOT NULL;

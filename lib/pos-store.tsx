@@ -25,7 +25,7 @@ type PosState = {
 };
 
 type PersistedState = Omit<PosState, "initialized">;
-type CheckoutOptions = { paymentMethod?: PaymentMethod; customerId?: string; debtAmount?: number };
+type CheckoutOptions = { paymentMethod?: PaymentMethod; customerId?: string; debtAmount?: number; sellerUserId?: number; sellerName?: string };
 type CustomerDraft = Pick<Customer, "name" | "phone" | "note">;
 
 type PosContextValue = PosState & {
@@ -149,7 +149,7 @@ export function PosStoreProvider({ children }: { children: ReactNode }) {
       const method = options.paymentMethod ?? "cash";
       const customer = options.customerId ? state.customers.find((item) => item.id === options.customerId) : undefined;
       const debtAmount = customer && method === "debt" ? Math.min(totalAmount, Math.max(0, options.debtAmount ?? totalAmount)) : 0;
-      const order: Order = { id: `HD-${String(Date.now()).slice(-6)}`, createdAt: new Date().toISOString(), items: state.cart.map((item) => ({ productId: item.productId, name: item.name, quantity: item.quantity, unit: item.unit, priceAtSale: item.price })), subtotal: calculateSubtotal(state.cart), discount: safeDiscount, totalAmount, paymentMethod: method, customerId: customer?.id, customerName: customer?.name, amountReceived: totalAmount - debtAmount, debtAmount };
+      const order: Order = { id: `HD-${String(Date.now()).slice(-6)}`, createdAt: new Date().toISOString(), items: state.cart.map((item) => ({ productId: item.productId, name: item.name, quantity: item.quantity, unit: item.unit, priceAtSale: item.price })), subtotal: calculateSubtotal(state.cart), discount: safeDiscount, totalAmount, paymentMethod: method, customerId: customer?.id, customerName: customer?.name, amountReceived: totalAmount - debtAmount, debtAmount, sellerUserId: options.sellerUserId, sellerName: options.sellerName };
       const activities = state.products.flatMap((product) => { const soldBase = state.cart.filter((item) => item.productId === product.id).reduce((sum, item) => sum + item.quantity * (item.conversionToBase ?? 1), 0); return soldBase ? [createActivity(product, "sale", product.stockQuantity, -soldBase, `Bán hàng ${order.id}`)] : []; });
       const debtTransaction = debtAmount && customer ? createDebtTransaction(customer, "charge", debtAmount, `Ghi nợ từ ${order.id}`, order.id) : undefined;
       dispatch({ type: "CHECKOUT", payload: { order, activities, debtTransaction } });

@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, Store, StoreMember, auditLogs, authChallenges, posSnapshots, snapshotBackups, storeMembers, stores, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { credentialsOpenId, hashPassword } from "./credential-auth";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -190,6 +191,61 @@ export async function appendAuditLog(actorUserId: number, storeId: number, actio
   const db = await getDb();
   if (!db) return;
   await db.insert(auditLogs).values({ storeId, actorUserId, action, entityType, entityId: entityId ?? null, metadataJson: metadata ? JSON.stringify(metadata) : null });
+}
+
+export async function updateStoreTypeForUser(userId: number, storeType: "solo" | "withStaff") {
+  const workspace = await getWorkspaceForUser(userId);
+  if (!workspace || workspace.membership.role !== "owner") return null;
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  await db.update(stores).set({ storeType, storeSetupCompleted: true }).where(eq(stores.id, workspace.store.id));
+  await appendAuditLog(userId, workspace.store.id, "store_type_update", "store", String(workspace.store.id), { storeType });
+  return (await db.select().from(stores).where(eq(stores.id, workspace.store.id)).limit(1))[0] ?? null;
+}
+
+export async function getStoreById(storeId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(stores).where(eq(stores.id, storeId)).limit(1))[0];
+}
+
+export async function getStoreMemberById(storeId: number, memberId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(storeMembers).where(and(eq(storeMembers.id, memberId), eq(storeMembers.storeId, storeId))).limit(1))[0];
+}
+
+export async function updateStoreMemberPinState(memberId: number, values: { pinFailedAttempts?: number; pinLockedUntil?: Date | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  await db.update(storeMembers).set(values).where(eq(storeMembers.id, memberId));
+}
+
+export async function createStoreStaff(ownerUserId: number, input: { name: string; kind: "email" | "phone"; identifier: string; password: string; pinHash: string }) {
+  const workspace = await getWorkspaceForUser(ownerUserId);
+  if (!workspace || workspace.membership.role !== "owner") return null;
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  const identifierOwner = input.kind === "email" ? await getUserByEmail(input.identifier) : await getUserByPhone(input.identifier);
+  if (identifierOwner?.passwordHash) throw new Error("Thông tin đăng nhập đã tồn tại.");
+  const openId = identifierOwner?.openId ?? credentialsOpenId(input.kind, input.identifier);
+  await upsertUser({ openId, name: input.name, email: input.kind === "email" ? input.identifier : identifierOwner?.email ?? null, phone: input.kind === "phone" ? input.identifier : identifierOwner?.phone ?? null, passwordHash: hashPassword(input.password), loginMethod: input.kind === "email" ? "credentials_email" : "credentials_phone", lastSignedIn: new Date() });
+  const user = await getUserByOpenId(openId);
+  if (!user) throw new Error("Không thể tạo tài khoản nhân viên.");
+  const existingMembership = (await db.select().from(storeMembers).where(and(eq(storeMembers.storeId, workspace.store.id), eq(storeMembers.userId, user.id))).limit(1))[0];
+  if (existingMembership) throw new Error("Tài khoản này đã là thành viên của quán.");
+  const result = await db.insert(storeMembers).values({ storeId: workspace.store.id, userId: user.id, role: "staff", status: "active", pinHash: input.pinHash });
+  const memberId = Number((result as { insertId?: number | bigint }).insertId ?? 0);
+  await appendAuditLog(ownerUserId, workspace.store.id, "staff_create", "store_member", String(memberId), { userId: user.id, kind: input.kind });
+  return { id: Number((result as { insertId?: number | bigint }).insertId ?? 0), userId: user.id, name: user.name, email: user.email, phone: user.phone, role: "staff" as const, status: "active" as const };
+}
+
+export async function listAuditLogsForUser(userId: number, limit = 100) {
+  const workspace = await getWorkspaceForUser(userId);
+  if (!workspace || workspace.membership.role !== "owner") return [];
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ id: auditLogs.id, actorUserId: auditLogs.actorUserId, actorName: users.name, action: auditLogs.action, entityType: auditLogs.entityType, entityId: auditLogs.entityId, metadataJson: auditLogs.metadataJson, createdAt: auditLogs.createdAt }).from(auditLogs).innerJoin(users, eq(users.id, auditLogs.actorUserId)).where(eq(auditLogs.storeId, workspace.store.id)).orderBy(desc(auditLogs.id)).limit(Math.min(Math.max(limit, 1), 200));
 }
 
 export async function listStoreMembers(userId: number) {

@@ -8,6 +8,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { VietQrSheet } from "@/components/vietqr-sheet";
 import { calculateSubtotal, calculateTotal, formatVnd } from "@/lib/pos-calculations";
 import { usePosStore } from "@/lib/pos-store";
+import { useAuth } from "@/hooks/use-auth";
 import type { CartItem, Customer, PaymentMethod } from "@/lib/pos-types";
 
 const PAYMENT_OPTIONS: { key: PaymentMethod; label: string; icon: React.ComponentProps<typeof MaterialIcons>["name"] }[] = [{ key: "cash", label: "Tiền mặt", icon: "payments" }, { key: "bank_transfer", label: "Chuyển khoản", icon: "qr-code-2" }, { key: "debt", label: "Ghi nợ", icon: "menu-book" }];
@@ -17,6 +18,7 @@ export default function CheckoutScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width >= 980;
   const { cart, updateCartQuantity, removeFromCart, checkout, clearCart, initialized, customers, debtTransactions, addCustomer, paymentSettings, savePaymentSettings } = usePosStore();
+  const { user } = useAuth();
   const [discountText, setDiscountText] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -27,7 +29,7 @@ export default function CheckoutScreen() {
   const total = useMemo(() => calculateTotal(cart, discount), [cart, discount]);
 
   function selectPayment(method: PaymentMethod) { setPaymentMethod(method); if (method === "debt") setPickerVisible(true); if (method === "bank_transfer") setQrVisible(true); }
-  function completeOrder() { if (paymentMethod === "debt" && !customer) { Alert.alert("Chọn khách quen", "Cần chọn khách hàng trước khi lưu đơn ghi nợ."); setPickerVisible(true); return; } const order = checkout(discount, { paymentMethod, customerId: customer?.id }); if (!order) return; setDiscountText(""); setCustomer(null); setPaymentMethod("cash"); const detail = paymentMethod === "debt" ? `Đã ghi nợ ${customer?.name}: ${formatVnd(order.debtAmount ?? 0)}.` : paymentMethod === "bank_transfer" ? "Đã lưu đơn chuyển khoản; hãy xác nhận tiền đã vào tài khoản." : "Đã thu tiền mặt."; Alert.alert("Đã lưu hóa đơn", `${order.id}\n${formatVnd(order.totalAmount)}\n${detail}`, [{ text: "Khách tiếp theo" }]); }
+  function completeOrder() { if (paymentMethod === "debt" && !customer) { Alert.alert("Chọn khách quen", "Cần chọn khách hàng trước khi lưu đơn ghi nợ."); setPickerVisible(true); return; } const order = checkout(discount, { paymentMethod, customerId: customer?.id, sellerUserId: user?.id, sellerName: user?.name || user?.email || user?.phone || undefined }); if (!order) return; setDiscountText(""); setCustomer(null); setPaymentMethod("cash"); const detail = paymentMethod === "debt" ? `Đã ghi nợ ${customer?.name}: ${formatVnd(order.debtAmount ?? 0)}.` : paymentMethod === "bank_transfer" ? "Đã lưu đơn chuyển khoản; hãy xác nhận tiền đã vào tài khoản." : "Đã thu tiền mặt."; Alert.alert("Đã lưu hóa đơn", `${order.id}\n${formatVnd(order.totalAmount)}\n${detail}`, [{ text: "Khách tiếp theo" }]); }
 
   if (!initialized) return <ScreenContainer><View style={styles.center}><Text style={styles.muted}>Đang mở giỏ hàng…</Text></View></ScreenContainer>;
   if (!cart.length) return <ScreenContainer edges={["top", "left", "right"]}><View style={styles.emptyPage}><View style={styles.emptyTop}><View><Text style={styles.eyebrow}>POS WORKSPACE</Text><Text style={styles.pageTitle}>Bán hàng</Text></View><View style={styles.shiftHint}><MaterialIcons name="point-of-sale" size={18} color="#1F7A4A" /><Text style={styles.shiftHintText}>Sẵn sàng nhận đơn</Text></View></View><View style={styles.emptyCard}><View style={styles.emptyIcon}><MaterialIcons name="shopping-cart" size={36} color="#1F7A4A" /></View><Text style={styles.emptyTitle}>Bắt đầu một giao dịch mới</Text><Text style={styles.muted}>Tìm sản phẩm hoặc quét mã để đưa hàng vào giỏ. Tổng tiền và phương thức thanh toán sẽ hiện ở đây.</Text><Pressable onPress={() => router.push("/(tabs)" as any)} style={styles.lookupButton}><MaterialIcons name="search" size={20} color="#FFFFFF" /><Text style={styles.lookupText}>Tra cứu sản phẩm</Text></Pressable><View style={styles.shortcutRow}><Shortcut icon="qr-code-scanner" label="Quét mã vạch" /><Shortcut icon="keyboard" label="Nhập nhanh" /><Shortcut icon="receipt-long" label="Xem hóa đơn" /></View></View></View></ScreenContainer>;

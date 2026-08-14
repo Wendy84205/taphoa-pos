@@ -36,6 +36,20 @@
       "when": 1786724836459,
       "tag": "0004_nifty_dust",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1786726610435,
+      "tag": "0005_special_taskmaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1786726757767,
+      "tag": "0006_cheerful_betty_brant",
+      "breakpoints": true
     }
   ]
 }
