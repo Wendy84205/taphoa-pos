@@ -101,3 +101,15 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [ ] Bổ sung kiểm thử cô lập dữ liệu giữa hai tenant và quyền nhân viên.
 - [x] Cập nhật RUN.md với cách bật backend, tài khoản và giới hạn của bản SaaS MVP.
 - [x] Commit và push toàn bộ thay đổi SaaS lên GitHub.
+
+## Hoàn thiện Website và chuẩn bị Vercel/Supabase
+
+- [x] Rà soát và hoàn thiện luồng Website Tra cứu, Bán hàng, Sản phẩm, Hóa đơn, Báo cáo, Công nợ và Tài khoản.
+- [x] Redesign toàn bộ UI Website theo hệ thống dashboard/POS chuyên nghiệp, giàu phân cấp thị giác hơn.
+- [x] Tạo dashboard Tra cứu có hero, chỉ số vận hành, cảnh báo tồn kho và hoạt động gần đây.
+- [x] Tạo workspace Bán hàng desktop hai cột với thanh tìm kiếm, giỏ hàng và thanh toán rõ ràng.
+- [x] Nâng cấp bảng Sản phẩm, Hóa đơn, Báo cáo, Công nợ và Tài khoản theo cùng hệ thống component.
+- [ ] Kiểm tra trạng thái offline/cloud và thông báo lỗi trên Website.
+- [x] Kiểm thử responsive Web desktop/tablet/mobile và các thao tác POS chính.
+- [ ] Chuẩn bị tài liệu biến môi trường và mapping backend cho Vercel/Supabase, chưa public.
+- [ ] Lưu checkpoint Website hoàn thiện và cập nhật GitHub.
