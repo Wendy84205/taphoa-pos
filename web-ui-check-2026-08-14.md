@@ -12,3 +12,10 @@ Ngày kiểm tra: 14/08/2026
 | Máy chủ Web | Máy chủ Web tĩnh trả HTTP 200 sau khi khởi động lại. |
 
 > Đây là kiểm tra trực quan trên trình duyệt. Các chức năng camera và luồng thiết bị di động cần tiếp tục thử trên thiết bị thật.
+
+## Kiểm tra phiên bản giao diện Web hoàn thiện
+
+- Desktop 1280px: sidebar xanh đậm, thẻ “Ca hôm nay”, trạng thái offline/LAN, header thao tác nhanh và trạng thái active theo từng tab hiển thị đúng trên Tra cứu, Bán hàng, Sản phẩm, Báo cáo, Công nợ.
+- Mobile Web 375px: tự chuyển về bottom tabs; không hiển thị sidebar desktop; màn Tra cứu vẫn giữ ô tìm kiếm, quét mã, cảnh báo tồn kho và các thẻ sản phẩm không bị tràn ngang.
+- Điều hướng trực tiếp `/ban-hang`: header đổi ngữ cảnh thành “Bán hàng”, sidebar active đúng và trạng thái giỏ trống có nút “Tra cứu sản phẩm”.
+- Kiểm tra TypeScript và lint đều thành công; bundle Web dựng thành công với 18 route tĩnh.

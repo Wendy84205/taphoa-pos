@@ -48,3 +48,44 @@
 - [x] Tạo commit và cập nhật toàn bộ thay đổi hoàn tất của Tạp Hóa POS lên GitHub.
 - [x] Kiểm tra giao diện Website POS và các luồng chính trên trình duyệt sau khi cập nhật GitHub.
 - [x] Khôi phục bản xem trước Website POS đang không khả dụng để hoàn tất kiểm tra giao diện.
+- [x] Tạo lớp vỏ Web desktop với sidebar, header cửa hàng và điều hướng responsive.
+- [x] Nâng cấp bố cục Web cho luồng Bán hàng theo dạng hai cột giỏ hàng/thanh toán.
+- [x] Nâng cấp bố cục Web cho quản lý Sản phẩm và các trạng thái thao tác chính.
+- [x] Kiểm tra responsive Web ở desktop và mobile viewport, sửa lỗi hiển thị.
+- [x] Lưu phiên bản Website Web hoàn chỉnh.
+
+## Ghi chú thiết kế Web
+
+- Hướng hình ảnh: quầy tạp hóa Việt hiện đại, nền giấy ấm, xanh lá chợ làm trục hành động, cam vàng làm tín hiệu cần xử lý.
+- Chữ: ưu tiên system sans-serif dễ đọc; tiêu đề đậm, số liệu lớn, nhãn thao tác ngắn.
+- Bố cục desktop: sidebar cố định 248px, vùng nội dung rộng 1180px, header có trạng thái LAN/offline và phím tắt tra cứu.
+- Chữ ký thị giác: thẻ “ca bán hàng” ở sidebar/header hiển thị doanh thu trong ngày và tình trạng đồng bộ, giúp chủ quán đọc nhanh trạng thái vận hành.
+- Responsive: dưới 900px quay về bottom tabs và 1 cột; không thay đổi luồng nghiệp vụ.
+- Khả năng tiếp cận: focus rõ, nút thao tác tối thiểu 44px, màu luôn đi kèm nhãn văn bản.
+
+## Thiết kế Web: phiên bản đã rà soát
+
+| Thành phần | Quyết định |
+|---|---|
+| Nền | #F4F6F1, nhẹ hơn nền kem để tạo cảm giác phần mềm vận hành cả ngày |
+| Sidebar | #173B2A, xanh chai đậm; logo vàng mù tạt và active pill xanh sáng |
+| Hành động chính | #1F7A4A, hover #17623A |
+| Tín hiệu cảnh báo | #D97706 trên nền #FFF4D8 |
+| Thẻ doanh thu | gradient xanh lá đậm, số tiền trắng, nhãn “Ca hôm nay” |
+| Khu vực nội dung | card trắng, border #DDE6DE, shadow thấp, radius 18px |
+| Điểm nhấn | một “quick action rail” bên phải header: quét mã, thêm hàng, mở giỏ |
+
+ASCII wireframe desktop:
+
+[logo + ca hôm nay] [Tra cứu nhanh / trạng thái LAN / cửa hàng]
+[Tra cứu]         [hero search + cảnh báo tồn kho + hàng gần đây]
+[Bán hàng]        [content page, desktop grid]
+[Sản phẩm]        [secondary actions]
+[Hóa đơn]
+[Báo cáo]
+[Công nợ]
+[Kết nối]
+
+Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và cùng các screen hiện tại.
+
+**Suy xét:** Không dùng dashboard dày đặc hoặc gradient trang trí toàn màn hình vì chủ quán cần đọc giá và trạng thái tồn kho nhanh hơn là xem một trang marketing. Điểm khác biệt nằm ở “ca hôm nay” và trạng thái LAN ngay trong khung điều hướng, phù hợp bối cảnh vận hành tại quầy.
