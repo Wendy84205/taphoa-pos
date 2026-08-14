@@ -3,7 +3,7 @@ import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef, 
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
 import { usePosStore } from "@/lib/pos-store";
-import type { Customer, DebtTransaction, ExpiryBatch, InventoryActivity, Order, PaymentSettings, Product, Shift, StockReceipt, Supplier, SupplierPayment } from "@/lib/pos-types";
+import type { ComboRule, Customer, DebtTransaction, ExpiryBatch, InventoryActivity, Order, PaymentReconciliation, PaymentSettings, Product, Promotion, Shift, StockReceipt, Supplier, SupplierPayment } from "@/lib/pos-types";
 
 type CloudSnapshot = {
   products: Product[];
@@ -17,6 +17,9 @@ type CloudSnapshot = {
   supplierPayments: SupplierPayment[];
   expiryBatches: ExpiryBatch[];
   shifts: Shift[];
+  paymentReconciliations: PaymentReconciliation[];
+  promotions: Promotion[];
+  comboRules: ComboRule[];
 };
 
 type CloudSyncStatus = "local" | "loading" | "synced" | "syncing" | "error";
@@ -36,6 +39,9 @@ function toSnapshot(state: Pick<CloudSnapshot, keyof CloudSnapshot>): CloudSnaps
     supplierPayments: state.supplierPayments,
     expiryBatches: state.expiryBatches,
     shifts: state.shifts,
+    paymentReconciliations: state.paymentReconciliations,
+    promotions: state.promotions,
+    comboRules: state.comboRules,
   };
 }
 
@@ -45,7 +51,7 @@ function snapshotSignature(snapshot: CloudSnapshot) {
 
 export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { initialized, products, orders, inventoryActivities, customers, debtTransactions, paymentSettings, suppliers, stockReceipts, supplierPayments, expiryBatches, shifts, replaceRemoteState } = usePosStore();
+  const { initialized, products, orders, inventoryActivities, customers, debtTransactions, paymentSettings, suppliers, stockReceipts, supplierPayments, expiryBatches, shifts, paymentReconciliations, promotions, comboRules, replaceRemoteState } = usePosStore();
   const workspaceQuery = trpc.workspace.me.useQuery(undefined, { enabled: isAuthenticated && initialized, retry: false });
   const snapshotQuery = trpc.workspace.snapshot.get.useQuery(undefined, { enabled: isAuthenticated && initialized && Boolean(workspaceQuery.data), retry: false });
   const pushSnapshot = trpc.workspace.snapshot.push.useMutation();
@@ -56,7 +62,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const remoteVersion = useRef(0);
   const skipFirstPush = useRef(true);
 
-  const localSnapshot = useMemo(() => toSnapshot({ products, orders, inventoryActivities, customers, debtTransactions, paymentSettings, suppliers, stockReceipts, supplierPayments, expiryBatches, shifts }), [customers, debtTransactions, expiryBatches, inventoryActivities, orders, paymentSettings, products, shifts, stockReceipts, supplierPayments, suppliers]);
+  const localSnapshot = useMemo(() => toSnapshot({ products, orders, inventoryActivities, customers, debtTransactions, paymentSettings, suppliers, stockReceipts, supplierPayments, expiryBatches, shifts, paymentReconciliations, promotions, comboRules }), [comboRules, customers, debtTransactions, expiryBatches, inventoryActivities, orders, paymentReconciliations, paymentSettings, products, promotions, shifts, stockReceipts, supplierPayments, suppliers]);
 
   useEffect(() => {
     if (authLoading || !isAuthenticated || !initialized) {
@@ -89,6 +95,9 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
           supplierPayments: remote.supplierPayments ?? [],
           expiryBatches: remote.expiryBatches ?? [],
           shifts: remote.shifts ?? [],
+          paymentReconciliations: remote.paymentReconciliations ?? [],
+          promotions: remote.promotions ?? [],
+          comboRules: remote.comboRules ?? [],
         };
         replaceRemoteState({ ...hydrated, cart: [] });
         latestSignature.current = snapshotSignature(hydrated);

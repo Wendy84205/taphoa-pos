@@ -1,8 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { calculateSubtotal, calculateTotal } from "@/lib/pos-calculations";
+import { calculateBestDiscount } from "@/lib/promotions";
 import { importProductsIntoCatalog } from "@/lib/product-import";
 import { calculateBaseQuantity, getBaseUnit } from "@/lib/product-units";
-import type { CartItem, Customer, DebtTransaction, ExpiryBatch, InventoryActivity, InventoryActivityType, Order, PaymentMethod, PaymentSettings, Product, ProductDraft, ProductUnit, Shift, StockReceipt, StockReceiptItem, Supplier, SupplierPayment } from "@/lib/pos-types";
+import type { CartItem, ComboRule, Customer, DebtTransaction, ExpiryBatch, InventoryActivity, InventoryActivityType, Order, PaymentMethod, PaymentReconciliation, PaymentSettings, Product, ProductDraft, ProductUnit, Promotion, Shift, StockReceipt, StockReceiptItem, Supplier, SupplierPayment, TransferReconciliationStatus } from "@/lib/pos-types";
 import { createContext, ReactNode, useContext, useEffect, useMemo, useReducer } from "react";
 
 const STORAGE_KEY = "taphoa-pos-v1";
@@ -22,10 +23,13 @@ type PosState = {
   supplierPayments: SupplierPayment[];
   expiryBatches: ExpiryBatch[];
   shifts: Shift[];
+  paymentReconciliations: PaymentReconciliation[];
+  promotions: Promotion[];
+  comboRules: ComboRule[];
 };
 
 type PersistedState = Omit<PosState, "initialized">;
-type CheckoutOptions = { paymentMethod?: PaymentMethod; customerId?: string; debtAmount?: number; sellerUserId?: number; sellerName?: string };
+type CheckoutOptions = { paymentMethod?: PaymentMethod; customerId?: string; debtAmount?: number; sellerUserId?: number; sellerName?: string; discountOverride?: number };
 type CustomerDraft = Pick<Customer, "name" | "phone" | "note">;
 
 type PosContextValue = PosState & {
@@ -51,6 +55,9 @@ type PosContextValue = PosState & {
   addExpiryBatch: (batch: Omit<ExpiryBatch, "id" | "createdAt">) => void;
   closeShift: (actualCash: number, note?: string) => Shift | null;
   recordSupplierPayment: (supplierId: string, amount: number, note?: string) => SupplierPayment | null;
+  reconcileTransfer: (orderId: string, input: { status: TransferReconciliationStatus; amountConfirmed?: number; reference?: string; note?: string }) => PaymentReconciliation | null;
+  addPromotion: (promotion: Omit<Promotion, "id" | "createdAt">) => Promotion;
+  addComboRule: (combo: Omit<ComboRule, "id" | "createdAt">) => ComboRule;
   getPersistedState: () => PersistedState;
   restorePersistedState: (payload: PersistedState) => void;
 };
@@ -77,7 +84,10 @@ type Action =
   | { type: "RECORD_STOCK_RECEIPT"; payload: { receipt: StockReceipt; products: Product[]; activities: InventoryActivity[]; expiryBatches: ExpiryBatch[] } }
   | { type: "ADD_EXPIRY_BATCH"; payload: ExpiryBatch }
   | { type: "CLOSE_SHIFT"; payload: Shift }
-  | { type: "ADD_SUPPLIER_PAYMENT"; payload: SupplierPayment };
+  | { type: "ADD_SUPPLIER_PAYMENT"; payload: SupplierPayment }
+  | { type: "RECONCILE_TRANSFER"; payload: PaymentReconciliation }
+  | { type: "ADD_PROMOTION"; payload: Promotion }
+  | { type: "ADD_COMBO_RULE"; payload: ComboRule };
 
 const now = new Date().toISOString();
 const seedProducts: Product[] = [
@@ -89,12 +99,12 @@ const seedProducts: Product[] = [
   { id: "p-6", name: "Trứng gà tươi", price: 3500, costPrice: 2800, unit: "quả", category: "Thực phẩm", stockQuantity: 52, lowStockThreshold: 15, createdAt: now, updatedAt: now },
 ];
 
-const initialState: PosState = { initialized: false, products: seedProducts, cart: [], orders: [], inventoryActivities: [], customers: [], debtTransactions: [], paymentSettings: emptyPaymentSettings, suppliers: [], stockReceipts: [], supplierPayments: [], expiryBatches: [], shifts: [] };
+const initialState: PosState = { initialized: false, products: seedProducts, cart: [], orders: [], inventoryActivities: [], customers: [], debtTransactions: [], paymentSettings: emptyPaymentSettings, suppliers: [], stockReceipts: [], supplierPayments: [], expiryBatches: [], shifts: [], paymentReconciliations: [], promotions: [], comboRules: [] };
 const PosContext = createContext<PosContextValue | null>(null);
 
 function reducer(state: PosState, action: Action): PosState {
   switch (action.type) {
-    case "HYDRATE": return { initialized: true, products: action.payload.products, cart: action.payload.cart, orders: action.payload.orders, inventoryActivities: action.payload.inventoryActivities ?? [], customers: action.payload.customers ?? [], debtTransactions: action.payload.debtTransactions ?? [], paymentSettings: action.payload.paymentSettings ?? emptyPaymentSettings, suppliers: action.payload.suppliers ?? [], stockReceipts: action.payload.stockReceipts ?? [], supplierPayments: action.payload.supplierPayments ?? [], expiryBatches: action.payload.expiryBatches ?? [], shifts: action.payload.shifts ?? [] };
+    case "HYDRATE": return { initialized: true, products: action.payload.products, cart: action.payload.cart, orders: action.payload.orders, inventoryActivities: action.payload.inventoryActivities ?? [], customers: action.payload.customers ?? [], debtTransactions: action.payload.debtTransactions ?? [], paymentSettings: action.payload.paymentSettings ?? emptyPaymentSettings, suppliers: action.payload.suppliers ?? [], stockReceipts: action.payload.stockReceipts ?? [], supplierPayments: action.payload.supplierPayments ?? [], expiryBatches: action.payload.expiryBatches ?? [], shifts: action.payload.shifts ?? [], paymentReconciliations: action.payload.paymentReconciliations ?? [], promotions: action.payload.promotions ?? [], comboRules: action.payload.comboRules ?? [] };
     case "ADD_PRODUCT": return { ...state, products: [action.payload, ...state.products], inventoryActivities: [action.activity, ...state.inventoryActivities] };
     case "UPDATE_PRODUCT": return { ...state, products: state.products.map((product) => product.id === action.id ? { ...product, ...action.payload, updatedAt: new Date().toISOString() } : product), inventoryActivities: action.activity ? [action.activity, ...state.inventoryActivities] : state.inventoryActivities };
     case "DELETE_PRODUCT": return { ...state, products: state.products.filter((product) => product.id !== action.id), cart: state.cart.filter((item) => item.productId !== action.id) };
@@ -112,7 +122,7 @@ function reducer(state: PosState, action: Action): PosState {
     case "CLEAR_CART": return { ...state, cart: [] };
     case "CHECKOUT": return { ...state, orders: [action.payload.order, ...state.orders], cart: [], inventoryActivities: [...action.payload.activities, ...state.inventoryActivities], debtTransactions: action.payload.debtTransaction ? [action.payload.debtTransaction, ...state.debtTransactions] : state.debtTransactions, products: state.products.map((product) => { const soldBase = state.cart.filter((item) => item.productId === product.id).reduce((sum, item) => sum + calculateBaseQuantity(item.quantity, { id: item.unitId ?? "base", label: item.unit, conversionToBase: item.conversionToBase ?? 1, price: item.price }), 0); return soldBase ? { ...product, stockQuantity: Math.max(0, product.stockQuantity - soldBase), updatedAt: new Date().toISOString() } : product; }) };
     case "REPLACE_REMOTE_SNAPSHOT": return { ...state, products: action.payload.products, orders: action.payload.orders };
-    case "REPLACE_REMOTE_STATE": return { ...state, products: action.payload.products, orders: action.payload.orders, inventoryActivities: action.payload.inventoryActivities ?? [], customers: action.payload.customers ?? [], debtTransactions: action.payload.debtTransactions ?? [], paymentSettings: action.payload.paymentSettings ?? emptyPaymentSettings, suppliers: action.payload.suppliers ?? [], stockReceipts: action.payload.stockReceipts ?? [], supplierPayments: action.payload.supplierPayments ?? [], expiryBatches: action.payload.expiryBatches ?? [], shifts: action.payload.shifts ?? [] };
+    case "REPLACE_REMOTE_STATE": return { ...state, products: action.payload.products, orders: action.payload.orders, inventoryActivities: action.payload.inventoryActivities ?? [], customers: action.payload.customers ?? [], debtTransactions: action.payload.debtTransactions ?? [], paymentSettings: action.payload.paymentSettings ?? emptyPaymentSettings, suppliers: action.payload.suppliers ?? [], stockReceipts: action.payload.stockReceipts ?? [], supplierPayments: action.payload.supplierPayments ?? [], expiryBatches: action.payload.expiryBatches ?? [], shifts: action.payload.shifts ?? [], paymentReconciliations: action.payload.paymentReconciliations ?? [], promotions: action.payload.promotions ?? [], comboRules: action.payload.comboRules ?? [] };
     case "IMPORT_PRODUCTS": return { ...state, products: action.payload, inventoryActivities: [...action.activities, ...state.inventoryActivities] };
     case "ADJUST_STOCK": return { ...state, products: state.products.map((product) => product.id === action.productId ? { ...product, stockQuantity: Math.max(0, product.stockQuantity + action.quantityChange), updatedAt: new Date().toISOString() } : product), inventoryActivities: [action.activity, ...state.inventoryActivities] };
     case "ADD_CUSTOMER": return { ...state, customers: [action.payload, ...state.customers] };
@@ -124,6 +134,9 @@ function reducer(state: PosState, action: Action): PosState {
     case "ADD_EXPIRY_BATCH": return { ...state, expiryBatches: [action.payload, ...state.expiryBatches] };
     case "CLOSE_SHIFT": return { ...state, shifts: [action.payload, ...state.shifts] };
     case "ADD_SUPPLIER_PAYMENT": return { ...state, supplierPayments: [action.payload, ...state.supplierPayments] };
+    case "RECONCILE_TRANSFER": return { ...state, paymentReconciliations: [action.payload, ...state.paymentReconciliations.filter((item) => item.orderId !== action.payload.orderId)], orders: state.orders.map((order) => order.id === action.payload.orderId ? { ...order, transferReconciliationId: action.payload.id, transferReconciliationStatus: action.payload.status } : order) };
+    case "ADD_PROMOTION": return { ...state, promotions: [action.payload, ...state.promotions] };
+    case "ADD_COMBO_RULE": return { ...state, comboRules: [action.payload, ...state.comboRules] };
     default: return state;
   }
 }
@@ -145,14 +158,17 @@ export function PosStoreProvider({ children }: { children: ReactNode }) {
     checkout: (discount, options = {}) => {
       if (!state.cart.length) return null;
       const safeDiscount = Math.min(Math.max(0, discount), calculateSubtotal(state.cart));
-      const totalAmount = calculateTotal(state.cart, safeDiscount);
+      const automaticDiscount = calculateBestDiscount(state.cart, state.promotions, state.comboRules);
+      const appliedDiscount = Math.min(calculateSubtotal(state.cart), Math.max(safeDiscount, automaticDiscount, options.discountOverride ?? 0));
+      const totalAmount = calculateTotal(state.cart, appliedDiscount);
       const method = options.paymentMethod ?? "cash";
       const customer = options.customerId ? state.customers.find((item) => item.id === options.customerId) : undefined;
       const debtAmount = customer && method === "debt" ? Math.min(totalAmount, Math.max(0, options.debtAmount ?? totalAmount)) : 0;
-      const order: Order = { id: `HD-${String(Date.now()).slice(-6)}`, createdAt: new Date().toISOString(), items: state.cart.map((item) => ({ productId: item.productId, name: item.name, quantity: item.quantity, unit: item.unit, priceAtSale: item.price })), subtotal: calculateSubtotal(state.cart), discount: safeDiscount, totalAmount, paymentMethod: method, customerId: customer?.id, customerName: customer?.name, amountReceived: totalAmount - debtAmount, debtAmount, sellerUserId: options.sellerUserId, sellerName: options.sellerName };
+      const order: Order = { id: `HD-${String(Date.now()).slice(-6)}`, createdAt: new Date().toISOString(), items: state.cart.map((item) => ({ productId: item.productId, name: item.name, quantity: item.quantity, unit: item.unit, priceAtSale: item.price })), subtotal: calculateSubtotal(state.cart), discount: appliedDiscount, totalAmount, paymentMethod: method, customerId: customer?.id, customerName: customer?.name, amountReceived: totalAmount - debtAmount, debtAmount, sellerUserId: options.sellerUserId, sellerName: options.sellerName };
       const activities = state.products.flatMap((product) => { const soldBase = state.cart.filter((item) => item.productId === product.id).reduce((sum, item) => sum + item.quantity * (item.conversionToBase ?? 1), 0); return soldBase ? [createActivity(product, "sale", product.stockQuantity, -soldBase, `Bán hàng ${order.id}`)] : []; });
       const debtTransaction = debtAmount && customer ? createDebtTransaction(customer, "charge", debtAmount, `Ghi nợ từ ${order.id}`, order.id) : undefined;
       dispatch({ type: "CHECKOUT", payload: { order, activities, debtTransaction } });
+      if (method === "bank_transfer") dispatch({ type: "RECONCILE_TRANSFER", payload: { id: `transfer-${Date.now()}`, orderId: order.id, amountExpected: order.totalAmount, status: "pending", createdAt: order.createdAt } });
       return order;
     },
     getProductByBarcode: (barcode) => state.products.find((product) => product.barcode === barcode),
@@ -181,8 +197,11 @@ export function PosStoreProvider({ children }: { children: ReactNode }) {
     addExpiryBatch: (batch) => dispatch({ type: "ADD_EXPIRY_BATCH", payload: { ...batch, id: `exp-${Date.now()}`, createdAt: new Date().toISOString() } }),
     closeShift: (actualCash, note) => { const today = new Date(); const todayOrders = state.orders.filter((order) => new Date(order.createdAt).toDateString() === today.toDateString()); const cashRevenue = todayOrders.filter((order) => (order.paymentMethod ?? "cash") === "cash").reduce((sum, order) => sum + (order.amountReceived ?? order.totalAmount), 0); const shift: Shift = { id: `shift-${Date.now()}`, openedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString(), closedAt: new Date().toISOString(), openingCash: 0, expectedCash: cashRevenue, actualCash: Math.max(0, Math.round(actualCash)), cashDifference: Math.round(actualCash - cashRevenue), totalRevenue: todayOrders.reduce((sum, order) => sum + order.totalAmount, 0), orderCount: todayOrders.length, note: note?.trim() || undefined }; dispatch({ type: "CLOSE_SHIFT", payload: shift }); return shift; },
     recordSupplierPayment: (supplierId, amount, note) => { const supplier = state.suppliers.find((item) => item.id === supplierId); if (!supplier || amount <= 0) return null; const payment: SupplierPayment = { id: `suppay-${Date.now()}`, supplierId, amount: Math.round(amount), note: note?.trim() || "Thanh toán công nợ nhà cung cấp", createdAt: new Date().toISOString() }; dispatch({ type: "ADD_SUPPLIER_PAYMENT", payload: payment }); return payment; },
+    reconcileTransfer: (orderId, input) => { const order = state.orders.find((item) => item.id === orderId && item.paymentMethod === "bank_transfer"); if (!order) return null; const amountConfirmed = input.amountConfirmed ?? order.totalAmount; if (input.status === "confirmed" && amountConfirmed < order.totalAmount) return null; const reconciliation: PaymentReconciliation = { id: `transfer-${Date.now()}`, orderId, amountExpected: order.totalAmount, amountConfirmed, status: input.status, reference: input.reference?.trim() || undefined, note: input.note?.trim() || undefined, createdAt: new Date().toISOString(), confirmedAt: input.status === "confirmed" ? new Date().toISOString() : undefined }; dispatch({ type: "RECONCILE_TRANSFER", payload: reconciliation }); return reconciliation; },
+    addPromotion: (promotion) => { const item: Promotion = { ...promotion, id: `promo-${Date.now()}`, value: Math.max(0, promotion.value), createdAt: new Date().toISOString() }; dispatch({ type: "ADD_PROMOTION", payload: item }); return item; },
+    addComboRule: (combo) => { const item: ComboRule = { ...combo, id: `combo-${Date.now()}`, requiredQuantity: Math.max(1, Math.trunc(combo.requiredQuantity)), comboPrice: Math.max(0, Math.round(combo.comboPrice)), createdAt: new Date().toISOString() }; dispatch({ type: "ADD_COMBO_RULE", payload: item }); return item; },
     getPersistedState: () => { const { initialized, ...payload } = state; return payload; },
-    restorePersistedState: (payload) => dispatch({ type: "HYDRATE", payload: { ...payload, cart: [], inventoryActivities: payload.inventoryActivities ?? [], customers: payload.customers ?? [], debtTransactions: payload.debtTransactions ?? [], paymentSettings: payload.paymentSettings ?? emptyPaymentSettings } }),
+    restorePersistedState: (payload) => dispatch({ type: "HYDRATE", payload: { ...payload, cart: [], inventoryActivities: payload.inventoryActivities ?? [], customers: payload.customers ?? [], debtTransactions: payload.debtTransactions ?? [], paymentSettings: payload.paymentSettings ?? emptyPaymentSettings, paymentReconciliations: payload.paymentReconciliations ?? [], promotions: payload.promotions ?? [], comboRules: payload.comboRules ?? [] } }),
   }), [state]);
   return <PosContext.Provider value={value}>{children}</PosContext.Provider>;
 }

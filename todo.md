@@ -157,10 +157,10 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Hoàn thiện quản lý lô nhập, hạn sử dụng và cảnh báo hàng cận date.
 - [x] Hoàn thiện nhà cung cấp, phiếu nhập, giá vốn trung bình và công nợ nhà cung cấp.
 - [x] Bổ sung đóng ca, kiểm tiền mặt thực tế và báo cáo chênh lệch.
-- [ ] Bổ sung xác nhận chuyển khoản/reconciliation có kiểm soát.
+- [x] Bổ sung xác nhận chuyển khoản/reconciliation có kiểm soát.
 - [x] Bổ sung in hóa đơn và tem giá qua luồng in phù hợp Web/mobile.
 - [x] Bổ sung mời nhân viên, khóa thành viên và audit log UI.
-- [ ] Bổ sung khuyến mãi và combo bán hàng.
+- [x] Bổ sung khuyến mãi và combo bán hàng.
 - [ ] Kiểm thử production trên trình duyệt, iOS và Android; cập nhật tài liệu bàn giao.
 
 > OTP/SMS và khôi phục mật khẩu qua SMS được chủ động giữ ngoài phạm vi triển khai ở giai đoạn này.
@@ -213,3 +213,16 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 
 - [x] Tạo checklist production mapping chi tiết cho database, domain, environment, backup, monitoring, rollback và mobile release.
 - [x] Bổ sung owner-only khóa/mở tài khoản nhân viên và đổi PIN 4–6 số, kèm audit log và kiểm tra trạng thái.
+
+## Đối soát chuyển khoản, khuyến mãi/combo và kiểm thử thiết bị thật
+
+- [x] Thêm trạng thái thanh toán chuyển khoản: chờ xác nhận, đã xác nhận, từ chối.
+- [x] Thêm mã tham chiếu, ghi chú và thời điểm đối soát giao dịch chuyển khoản.
+- [x] Thêm màn/drawer đối soát thủ công cho owner, gắn với hóa đơn và audit log.
+- [x] Không cho đánh dấu đã đối soát nếu số tiền xác nhận nhỏ hơn tổng phải thu.
+- [x] Thêm khuyến mãi giảm theo phần trăm và số tiền cho sản phẩm/đơn hàng.
+- [x] Thêm combo theo nhóm sản phẩm, giá combo và điều kiện số lượng.
+- [x] Hiển thị rõ giá gốc, mức giảm, giá sau khuyến mãi trong POS và hóa đơn.
+- [x] Bổ sung test tính giá khuyến mãi, combo, hoàn tiền/ghi nợ và đối soát.
+- [x] Tạo checklist kiểm thử iPhone/Android thật cho camera, SecureStore, offline, chia sẻ file và in.
+- [x] Export bundle Web/Android/iOS và cập nhật hướng dẫn cài đặt kiểm thử thiết bị.

@@ -48,9 +48,45 @@ export type Order = {
   debtAmount?: number;
   sellerUserId?: number;
   sellerName?: string;
+  transferReconciliationId?: string;
+  transferReconciliationStatus?: TransferReconciliationStatus;
 };
 
 export type PaymentMethod = "cash" | "bank_transfer" | "debt";
+export type TransferReconciliationStatus = "pending" | "confirmed" | "rejected";
+
+export type PaymentReconciliation = {
+  id: string;
+  orderId: string;
+  amountExpected: number;
+  amountConfirmed?: number;
+  status: TransferReconciliationStatus;
+  reference?: string;
+  note?: string;
+  createdAt: string;
+  confirmedAt?: string;
+};
+
+export type Promotion = {
+  id: string;
+  name: string;
+  kind: "percent" | "fixed";
+  value: number;
+  productIds?: string[];
+  minSubtotal?: number;
+  active: boolean;
+  createdAt: string;
+};
+
+export type ComboRule = {
+  id: string;
+  name: string;
+  productIds: string[];
+  requiredQuantity: number;
+  comboPrice: number;
+  active: boolean;
+  createdAt: string;
+};
 
 export type ProductUnit = {
   id: string;
