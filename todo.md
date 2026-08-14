@@ -110,6 +110,13 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Tạo workspace Bán hàng desktop hai cột với thanh tìm kiếm, giỏ hàng và thanh toán rõ ràng.
 - [x] Nâng cấp bảng Sản phẩm, Hóa đơn, Báo cáo, Công nợ và Tài khoản theo cùng hệ thống component.
 - [ ] Kiểm tra trạng thái offline/cloud và thông báo lỗi trên Website.
+- [x] Đọc và đối chiếu repository UI/UX Pro Max với hệ thống UI hiện tại.
+- [x] Thêm animation nhẹ, hover/focus/press state cho landing page.
+- [x] Thêm form đăng ký dùng thử/liên hệ và trạng thái submit rõ ràng.
+- [x] Thêm route Bảng giá với các gói và CTA.
+- [x] Thêm FAQ accordion và nội dung giải đáp cho chủ cửa hàng.
+- [x] Thêm các đám mây chỉ dẫn sử dụng website/app theo ngữ cảnh.
+- [x] Kiểm tra accessibility, reduced motion và responsive cho các tương tác mới.
 - [x] Tạo landing page giới thiệu Tạp Hóa POS tách biệt khỏi khu vực vận hành.
 - [x] Bổ sung hero, tính năng nổi bật, lợi ích cửa hàng và CTA bắt đầu dùng thử.
 - [x] Kiểm tra landing page responsive desktop/mobile và điều hướng vào POS.
