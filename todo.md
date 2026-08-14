@@ -100,4 +100,4 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Xây dựng đồng bộ cloud có kiểm soát, giữ offline-first cục bộ làm bộ đệm tạm thời.
 - [ ] Bổ sung kiểm thử cô lập dữ liệu giữa hai tenant và quyền nhân viên.
 - [x] Cập nhật RUN.md với cách bật backend, tài khoản và giới hạn của bản SaaS MVP.
-- [ ] Commit và push toàn bộ thay đổi SaaS lên GitHub.
+- [x] Commit và push toàn bộ thay đổi SaaS lên GitHub.
