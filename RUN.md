@@ -67,4 +67,14 @@ Chọn **Chuyển khoản** để mở VietQR với đúng số tiền của đ�
 
 Khi thêm hoặc sửa sản phẩm, mục **Đơn vị quy đổi** cho phép khai báo lốc/thùng, số lượng quy đổi về đơn vị cơ sở và giá bán riêng. Trong trang Tra cứu, chạm nút **lốc** hoặc **thùng** để thêm đúng đơn vị vào giỏ; ứng dụng trừ tồn theo số chai/gói cơ sở.
 
-Đồng bộ Firebase, tài khoản nhân viên, in Bluetooth, xuất Excel/CSV và nhận diện hàng bằng AI chưa được kết nối ở bản MVP. Các hạng mục này nên được triển khai ở giai đoạn tiếp theo sau khi đã xác nhận quy trình bán hàng thực tế của quán.
+## Cloud SaaS và nhiều quán
+
+Bản mở rộng cloud dùng **Manus OAuth** cho đăng nhập Web/iOS/Android. Sau lần đăng nhập đầu tiên, hệ thống tự tạo một **workspace/quán** riêng cho tài khoản; dữ liệu giữa các workspace được cô lập bằng `storeId` ở backend. Tài khoản đầu tiên của workspace có vai trò **Chủ quán**; mô hình thành viên đã hỗ trợ `owner` và `staff`, trong đó nhân viên bị chặn khỏi thao tác ghi đè snapshot dữ liệu kho trên cloud.
+
+Khi đã đăng nhập và backend database hoạt động, `CloudSyncProvider` tải snapshot của workspace và cập nhật sản phẩm, hóa đơn, lịch sử kho, khách hàng, công nợ và cài đặt thanh toán. Thay đổi cục bộ vẫn được lưu bằng AsyncStorage trước; khi có mạng, owner sẽ đồng bộ snapshot lên cloud sau một khoảng chờ ngắn để gom các thao tác liên tiếp. Nếu cloud không sẵn sàng, giao diện hiển thị trạng thái **Đang lưu offline** và không xóa dữ liệu cục bộ.
+
+Mở màn **Tài khoản** từ sidebar Web để xem email đăng nhập, workspace, vai trò, trạng thái đồng bộ và danh sách thành viên. Endpoint cloud đều yêu cầu authenticated user; endpoint snapshot chỉ cho owner ghi dữ liệu trong SaaS MVP hiện tại. Đây là lớp nền an toàn cho tenant, chưa phải hệ thống subscription hoặc mời nhân viên qua email hoàn chỉnh.
+
+Để chạy backend cloud, cần cấu hình `DATABASE_URL` cho server theo môi trường WebDev. Migration `drizzle/0001_silent_firebird.sql` tạo các bảng `stores`, `storeMembers`, `posSnapshots` và `auditLogs`; không xóa bảng `users` hay dữ liệu POS cục bộ. Khi phát hành thật, cần bổ sung luồng mời thành viên, conflict resolution theo từng entity, rate limit và backup cloud định kỳ.
+
+Đồng bộ Firebase, mời nhân viên qua email, in Bluetooth, xuất Excel/CSV nâng cao, subscription và nhận diện hàng bằng AI chưa được kết nối đầy đủ ở bản SaaS MVP. Các hạng mục này nên triển khai sau khi xác nhận quy trình bán hàng thực tế của nhiều quán.

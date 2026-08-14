@@ -89,3 +89,15 @@ ASCII wireframe desktop:
 Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và cùng các screen hiện tại.
 
 **Suy xét:** Không dùng dashboard dày đặc hoặc gradient trang trí toàn màn hình vì chủ quán cần đọc giá và trạng thái tồn kho nhanh hơn là xem một trang marketing. Điểm khác biệt nằm ở “ca hôm nay” và trạng thái LAN ngay trong khung điều hướng, phù hợp bối cảnh vận hành tại quầy.
+
+## SaaS cloud multi-tenant từ prompt mới
+
+- [x] Chốt giữ Expo/React Native làm codebase Web/Android/iOS hiện tại; không chuyển sang Flutter trong phạm vi dự án đang có.
+- [x] Thiết kế tenant Store/Member với chủ quán và nhân viên, phân quyền không sửa giá/xóa đơn.
+- [x] Bổ sung schema cloud cho cửa hàng, thành viên, sản phẩm, đơn hàng và audit metadata theo tenant.
+- [x] Bổ sung API protected và kiểm tra tenant ở server cho dữ liệu POS.
+- [x] Tích hợp trạng thái đăng nhập và màn hình tài khoản/cửa hàng trên Web/mobile.
+- [x] Xây dựng đồng bộ cloud có kiểm soát, giữ offline-first cục bộ làm bộ đệm tạm thời.
+- [ ] Bổ sung kiểm thử cô lập dữ liệu giữa hai tenant và quyền nhân viên.
+- [x] Cập nhật RUN.md với cách bật backend, tài khoản và giới hạn của bản SaaS MVP.
+- [ ] Commit và push toàn bộ thay đổi SaaS lên GitHub.

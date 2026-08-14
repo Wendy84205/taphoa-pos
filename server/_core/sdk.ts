@@ -287,6 +287,8 @@ class SDKServer {
       lastSignedIn: signedInAt,
     });
 
+    await db.ensureWorkspaceForUser(user.id, user.name ? `Quầy của ${user.name}` : undefined);
+
     return user;
   }
 }

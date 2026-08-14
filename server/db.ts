@@ -1,11 +1,10 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, Store, StoreMember, auditLogs, posSnapshots, storeMembers, stores, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -19,74 +18,96 @@ export async function getDb() {
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-
+  if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-
-  try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = "admin";
-      updateSet.role = "admin";
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
+  if (!db) { console.warn("[Database] Cannot upsert user: database not available"); return; }
+  const values: InsertUser = { openId: user.openId };
+  const updateSet: Record<string, unknown> = {};
+  const textFields = ["name", "email", "loginMethod"] as const;
+  type TextField = (typeof textFields)[number];
+  const assignNullable = (field: TextField) => {
+    const value = user[field];
+    if (value === undefined) return;
+    values[field] = value ?? null;
+    updateSet[field] = value ?? null;
+  };
+  textFields.forEach(assignNullable);
+  if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; }
+  if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; }
+  else if (user.openId === ENV.ownerOpenId) { values.role = "admin"; updateSet.role = "admin"; }
+  if (!values.lastSignedIn) values.lastSignedIn = new Date();
+  if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
+  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
 }
 
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
+  if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export type Workspace = { store: Store; membership: StoreMember };
+
+export async function getWorkspaceForUser(userId: number): Promise<Workspace | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const memberships = await db.select().from(storeMembers).where(and(eq(storeMembers.userId, userId), eq(storeMembers.status, "active"))).orderBy(desc(storeMembers.id)).limit(1);
+  const membership = memberships[0];
+  if (!membership) return null;
+  const store = (await db.select().from(stores).where(eq(stores.id, membership.storeId)).limit(1))[0];
+  return store ? { store, membership } : null;
+}
+
+export async function ensureWorkspaceForUser(userId: number, suggestedName?: string): Promise<Workspace | null> {
+  const existing = await getWorkspaceForUser(userId);
+  if (existing) return existing;
+  const db = await getDb();
+  if (!db) return null;
+  await db.insert(stores).values({ name: suggestedName?.trim() || "Quán tạp hóa của tôi", ownerUserId: userId, subscriptionPlan: "free" });
+  const store = (await db.select().from(stores).where(eq(stores.ownerUserId, userId)).orderBy(desc(stores.id)).limit(1))[0];
+  if (!store) return null;
+  await db.insert(storeMembers).values({ storeId: store.id, userId, role: "owner", status: "active" });
+  const membership = (await db.select().from(storeMembers).where(and(eq(storeMembers.storeId, store.id), eq(storeMembers.userId, userId))).limit(1))[0];
+  return membership ? { store, membership } : null;
+}
+
+export async function getSnapshotForUser(userId: number): Promise<{ snapshot: Record<string, unknown>; version: number; updatedAt: Date } | null> {
+  const workspace = await getWorkspaceForUser(userId);
+  if (!workspace) return null;
+  const db = await getDb();
+  if (!db) return null;
+  const row = (await db.select().from(posSnapshots).where(eq(posSnapshots.storeId, workspace.store.id)).limit(1))[0];
+  if (!row) return null;
+  try {
+    return { snapshot: JSON.parse(row.snapshotJson) as Record<string, unknown>, version: row.version, updatedAt: row.updatedAt };
+  } catch {
+    return null;
+  }
+}
+
+export async function upsertSnapshotForUser(userId: number, snapshot: Record<string, unknown>) {
+  const workspace = await ensureWorkspaceForUser(userId);
+  if (!workspace) throw new Error("Cloud database is not available");
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  const current = (await db.select().from(posSnapshots).where(eq(posSnapshots.storeId, workspace.store.id)).limit(1))[0];
+  const version = (current?.version ?? 0) + 1;
+  await db.insert(posSnapshots).values({ storeId: workspace.store.id, version, snapshotJson: JSON.stringify(snapshot), updatedByUserId: userId }).onDuplicateKeyUpdate({ set: { version, snapshotJson: JSON.stringify(snapshot), updatedByUserId: userId, updatedAt: new Date() } });
+  await appendAuditLog(userId, workspace.store.id, "snapshot_sync", "pos_snapshot", String(workspace.store.id), { version });
+  return { version, storeId: workspace.store.id };
+}
+
+export async function appendAuditLog(actorUserId: number, storeId: number, action: string, entityType: string, entityId?: string, metadata?: Record<string, unknown>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(auditLogs).values({ storeId, actorUserId, action, entityType, entityId: entityId ?? null, metadataJson: metadata ? JSON.stringify(metadata) : null });
+}
+
+export async function listStoreMembers(userId: number) {
+  const workspace = await getWorkspaceForUser(userId);
+  if (!workspace) return [];
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ id: storeMembers.id, userId: users.id, name: users.name, email: users.email, role: storeMembers.role, status: storeMembers.status, createdAt: storeMembers.createdAt }).from(storeMembers).innerJoin(users, eq(users.id, storeMembers.userId)).where(eq(storeMembers.storeId, workspace.store.id)).orderBy(desc(storeMembers.id));
+}

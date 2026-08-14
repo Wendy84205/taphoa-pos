@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/bao-cao", label: "Báo cáo", icon: "bar-chart" as const },
   { href: "/cong-no", label: "Công nợ", icon: "menu-book" as const },
   { href: "/ket-noi", label: "Kết nối LAN", icon: "wifi" as const },
+  { href: "/tai-khoan", label: "Tài khoản", icon: "account-circle" as const },
 ] as const;
 
 function isToday(value: string) {
@@ -49,7 +50,7 @@ export function WebShell() {
         <View style={styles.navList}>
           {NAV_ITEMS.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-            return <Link key={item.href} href={item.href} asChild><Pressable style={({ pressed }) => [styles.navItem, active && styles.navItemActive, pressed && styles.navItemPressed]}><MaterialIcons name={item.icon} size={20} color={active ? "#FFFFFF" : "#B8D0BF"} /><Text style={[styles.navLabel, active && styles.navLabelActive]}>{item.label}</Text>{"hint" in item && item.hint ? <Text style={[styles.navHint, active && styles.navHintActive]}>{item.hint}</Text> : null}{item.label === "Sản phẩm" && lowStockCount > 0 ? <View style={styles.navBadge}><Text style={styles.navBadgeText}>{lowStockCount}</Text></View> : null}</Pressable></Link>;
+            return <Link key={item.href} href={item.href as any} asChild><Pressable style={({ pressed }) => [styles.navItem, active && styles.navItemActive, pressed && styles.navItemPressed]}><MaterialIcons name={item.icon} size={20} color={active ? "#FFFFFF" : "#B8D0BF"} /><Text style={[styles.navLabel, active && styles.navLabelActive]}>{item.label}</Text>{"hint" in item && item.hint ? <Text style={[styles.navHint, active && styles.navHintActive]}>{item.hint}</Text> : null}{item.label === "Sản phẩm" && lowStockCount > 0 ? <View style={styles.navBadge}><Text style={styles.navBadgeText}>{lowStockCount}</Text></View> : null}</Pressable></Link>;
           })}
         </View>
         <View style={styles.sidebarBottom}>

@@ -18,4 +18,6 @@ Ngày kiểm tra: 14/08/2026
 - Desktop 1280px: sidebar xanh đậm, thẻ “Ca hôm nay”, trạng thái offline/LAN, header thao tác nhanh và trạng thái active theo từng tab hiển thị đúng trên Tra cứu, Bán hàng, Sản phẩm, Báo cáo, Công nợ.
 - Mobile Web 375px: tự chuyển về bottom tabs; không hiển thị sidebar desktop; màn Tra cứu vẫn giữ ô tìm kiếm, quét mã, cảnh báo tồn kho và các thẻ sản phẩm không bị tràn ngang.
 - Điều hướng trực tiếp `/ban-hang`: header đổi ngữ cảnh thành “Bán hàng”, sidebar active đúng và trạng thái giỏ trống có nút “Tra cứu sản phẩm”.
-- Kiểm tra TypeScript và lint đều thành công; bundle Web dựng thành công với 18 route tĩnh.
+- Kiểm tra TypeScript và lint đều thành công; bundle Web dựng thành công với 20 route tĩnh, gồm `/tai-khoan`.
+- Màn `/tai-khoan` hiển thị lớp vỏ Web, nút đăng nhập Manus và giải thích offline khi chưa có phiên cloud.
+- API `auth.me` trả trạng thái chưa đăng nhập an toàn; API `workspace.me` trả HTTP 401 khi không có session, xác nhận protected route không lộ dữ liệu tenant.

@@ -34,6 +34,7 @@ type PosContextValue = PosState & {
   checkout: (discount: number, options?: CheckoutOptions) => Order | null;
   getProductByBarcode: (barcode: string) => Product | undefined;
   replaceRemoteSnapshot: (products: Product[], orders: Order[]) => void;
+  replaceRemoteState: (payload: PersistedState) => void;
   importProducts: (drafts: ProductDraft[]) => { added: number; updated: number };
   adjustStock: (productId: string, quantityChange: number, note: string) => void;
   addCustomer: (draft: CustomerDraft) => Customer;
@@ -53,6 +54,7 @@ type Action =
   | { type: "CLEAR_CART" }
   | { type: "CHECKOUT"; payload: { order: Order; activities: InventoryActivity[]; debtTransaction?: DebtTransaction } }
   | { type: "REPLACE_REMOTE_SNAPSHOT"; payload: { products: Product[]; orders: Order[] } }
+  | { type: "REPLACE_REMOTE_STATE"; payload: PersistedState }
   | { type: "IMPORT_PRODUCTS"; payload: Product[]; activities: InventoryActivity[] }
   | { type: "ADJUST_STOCK"; productId: string; quantityChange: number; activity: InventoryActivity }
   | { type: "ADD_CUSTOMER"; payload: Customer }
@@ -93,6 +95,7 @@ function reducer(state: PosState, action: Action): PosState {
     case "CLEAR_CART": return { ...state, cart: [] };
     case "CHECKOUT": return { ...state, orders: [action.payload.order, ...state.orders], cart: [], inventoryActivities: [...action.payload.activities, ...state.inventoryActivities], debtTransactions: action.payload.debtTransaction ? [action.payload.debtTransaction, ...state.debtTransactions] : state.debtTransactions, products: state.products.map((product) => { const soldBase = state.cart.filter((item) => item.productId === product.id).reduce((sum, item) => sum + calculateBaseQuantity(item.quantity, { id: item.unitId ?? "base", label: item.unit, conversionToBase: item.conversionToBase ?? 1, price: item.price }), 0); return soldBase ? { ...product, stockQuantity: Math.max(0, product.stockQuantity - soldBase), updatedAt: new Date().toISOString() } : product; }) };
     case "REPLACE_REMOTE_SNAPSHOT": return { ...state, products: action.payload.products, orders: action.payload.orders };
+    case "REPLACE_REMOTE_STATE": return { ...state, products: action.payload.products, orders: action.payload.orders, inventoryActivities: action.payload.inventoryActivities ?? [], customers: action.payload.customers ?? [], debtTransactions: action.payload.debtTransactions ?? [], paymentSettings: action.payload.paymentSettings ?? emptyPaymentSettings };
     case "IMPORT_PRODUCTS": return { ...state, products: action.payload, inventoryActivities: [...action.activities, ...state.inventoryActivities] };
     case "ADJUST_STOCK": return { ...state, products: state.products.map((product) => product.id === action.productId ? { ...product, stockQuantity: Math.max(0, product.stockQuantity + action.quantityChange), updatedAt: new Date().toISOString() } : product), inventoryActivities: [action.activity, ...state.inventoryActivities] };
     case "ADD_CUSTOMER": return { ...state, customers: [action.payload, ...state.customers] };
@@ -132,6 +135,7 @@ export function PosStoreProvider({ children }: { children: ReactNode }) {
     },
     getProductByBarcode: (barcode) => state.products.find((product) => product.barcode === barcode),
     replaceRemoteSnapshot: (products, orders) => dispatch({ type: "REPLACE_REMOTE_SNAPSHOT", payload: { products, orders } }),
+    replaceRemoteState: (payload) => dispatch({ type: "REPLACE_REMOTE_STATE", payload }),
     importProducts: (drafts) => { const imported = importProductsIntoCatalog(state.products, drafts); const activities = imported.products.flatMap((product) => { const previous = state.products.find((candidate) => candidate.id === product.id); if (!previous) return [createActivity(product, "import", 0, product.stockQuantity, "Nhập từ tệp Excel/CSV")]; const change = product.stockQuantity - previous.stockQuantity; return change !== 0 ? [createActivity(product, "import", previous.stockQuantity, change, "Cập nhật từ tệp Excel/CSV")] : []; }); dispatch({ type: "IMPORT_PRODUCTS", payload: imported.products, activities }); return { added: imported.added, updated: imported.updated }; },
     adjustStock: (productId, quantityChange, note) => { const product = state.products.find((candidate) => candidate.id === productId); if (!product || !quantityChange) return; const safeChange = Math.max(-product.stockQuantity, Math.trunc(quantityChange)); dispatch({ type: "ADJUST_STOCK", productId, quantityChange: safeChange, activity: createActivity(product, "adjustment", product.stockQuantity, safeChange, note || "Điều chỉnh tồn kho") }); },
     addCustomer: (draft) => { const timestamp = new Date().toISOString(); const customer = { id: `cus-${Date.now()}`, name: draft.name.trim(), phone: draft.phone?.trim() || undefined, note: draft.note?.trim() || undefined, createdAt: timestamp, updatedAt: timestamp }; dispatch({ type: "ADD_CUSTOMER", payload: customer }); return customer; },
