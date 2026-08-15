@@ -10,11 +10,14 @@ Tài liệu này mô tả các bước cần hoàn tất trước khi public Web
 | Session | Cookie/session signing từ runtime Manus | WebDev runtime | Domain production, secure cookie, same-site policy và thời hạn session |
 | Mobile | API base URL/runtime config | Preview URL | URL HTTPS cố định, không trỏ vào localhost hoặc preview tạm thời |
 | Web | Static bundle/hosting | Web preview tĩnh | Domain HTTPS, SPA fallback, cache policy và source-map policy |
+| CORS | `CORS_ORIGINS` | Development preview | Chỉ chứa domain production được phép; không phản chiếu origin tùy ý |
+| CSRF | Cookie `taphoa_csrf` + header `x-csrf-token` | Đã bật trong API | Xác nhận Web client gửi header cho mọi mutation authenticated |
+| Abuse control | Rate limit auth/PIN | In-memory MVP | Giới hạn theo IP/route; production nhiều instance cần Redis hoặc gateway limiter |
 | OTP | Không triển khai trong phạm vi hiện tại | Không dùng | Giữ tắt cho đến khi có yêu cầu mới |
 
 ## 2. Database và migration
 
-Trước khi public, tạo một database production riêng, chạy toàn bộ migration Drizzle theo thứ tự và xác nhận các bảng tenant gồm `stores`, `storeMembers`, `posSnapshots`, `snapshotBackups` và `auditLogs`. Không dùng database preview để lưu dữ liệu cửa hàng thật. Kiểm tra foreign key, index theo `storeId`, quyền owner/staff và cơ chế compare-and-swap của snapshot.
+Trước khi public, tạo một database production riêng, chạy toàn bộ migration Drizzle theo thứ tự và xác nhận các bảng tenant gồm `stores`, `storeMembers`, `posSnapshots`, `snapshotBackups` và `auditLogs`. Migration `0007_young_shatterstar.sql` phải được áp dụng để tạo unique constraint nullable cho `users.email` và `users.phone`; nếu database đã có dữ liệu trùng, phải xử lý mapping trước khi migrate. Không dùng database preview để lưu dữ liệu cửa hàng thật. Kiểm tra foreign key, index theo `storeId`, quyền owner/staff và cơ chế compare-and-swap của snapshot.
 
 ## 3. Tenant isolation và quyền
 
@@ -26,7 +29,7 @@ Bật lịch backup database ở tầng hosting. Ngoài cloud backup, chủ quá
 
 ## 5. Monitoring và rollback
 
-Theo dõi HTTP 5xx, lỗi tRPC, lỗi đồng bộ cloud, conflict snapshot, thời gian phản hồi và tỷ lệ bundle load thất bại. Lưu log không chứa mật khẩu, PIN hoặc token. Trước mỗi lần public, lưu checkpoint. Khi có lỗi nghiêm trọng, rollback về checkpoint ứng dụng ổn định và khôi phục database từ backup tương ứng; không dùng `git reset --hard` hoặc migration phá dữ liệu.
+Theo dõi HTTP 5xx, lỗi tRPC, lỗi đồng bộ cloud, conflict snapshot, thời gian phản hồi, rate-limit 429 và tỷ lệ bundle load thất bại. Lưu log không chứa mật khẩu, PIN, token hoặc dữ liệu snapshot. Nếu chạy nhiều instance, thay in-memory rate limiter bằng limiter dùng Redis/API gateway. Trước mỗi lần public, lưu checkpoint. Khi có lỗi nghiêm trọng, rollback về checkpoint ứng dụng ổn định và khôi phục database từ backup tương ứng; không dùng `git reset --hard` hoặc migration phá dữ liệu.
 
 ## 6. Web hosting
 
@@ -38,4 +41,4 @@ Dùng luồng Publish để tạo build iOS/Android; không tự build APK trong
 
 ## 8. Go-live gate
 
-Chỉ public khi TypeScript, lint, unit tests, tenant isolation tests, LAN smoke test, authenticated flows và thiết bị thật đều đạt; production database có backup/restore thử nghiệm; domain HTTPS hoạt động; và có checkpoint rollback được xác định rõ. Các tính năng subscription, nhiều chi nhánh, reconciliation ngân hàng tự động, SMS/email invitation và combo nâng cao có thể phát hành ở các giai đoạn sau.
+Chỉ public khi TypeScript, lint, unit tests, tenant isolation tests, rate-limit/CSRF tests, LAN smoke test, authenticated flows và thiết bị thật đều đạt; production database có backup/restore thử nghiệm; domain HTTPS hoạt động; và có checkpoint rollback được xác định rõ. Các tính năng subscription, nhiều chi nhánh, reconciliation ngân hàng tự động, SMS/email invitation và combo nâng cao có thể phát hành ở các giai đoạn sau.

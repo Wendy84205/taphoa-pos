@@ -227,18 +227,93 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Tạo checklist kiểm thử iPhone/Android thật cho camera, SecureStore, offline, chia sẻ file và in.
 - [x] Export bundle Web/Android/iOS và cập nhật hướng dẫn cài đặt kiểm thử thiết bị.
 
-## Rà soát thiếu sót Web và app
+## Kiểm thử tổng thể và an ninh MVP
 
-- [ ] Lập ma trận phần đã có, phần chưa hoàn thiện và phần cần kiểm thử thật trên Web/app.
-- [ ] Cập nhật backlog ưu tiên trước khi public production.
+- [x] Chạy toàn bộ TypeScript, lint, unit tests và bundle Web/Android/iOS.
+- [ ] Kiểm thử chức năng POS, sản phẩm, tồn kho, công nợ, VietQR, nhập hàng, hạn dùng, đóng ca, đối soát và khuyến mãi/combo.
+- [ ] Kiểm thử backup/restore, cloud snapshot, conflict resolution và LAN full-state.
+- [x] Kiểm tra Website responsive, route chính, loading/error/empty state và onboarding.
+- [x] Kiểm tra app contracts/native compatibility cho camera, SecureStore, offline, chia sẻ và in.
+- [ ] Rà soát auth/session, password hashing, cookie, CORS, input validation và rate limit.
+- [ ] Rà soát tenant isolation, owner/staff authorization, PIN lockout và audit trail.
+- [x] Rà soát secret exposure, log nhạy cảm, file backup và dữ liệu export.
+- [x] Ghi nhận phát hiện, khắc phục lỗi hồi quy nếu có và xác minh lại.
+- [x] Hardening CORS production, giới hạn body/snapshot và loại bỏ log token/user nhạy cảm.
+- [ ] Bổ sung rate limit cho login/PIN và CSRF protection cho mutation dùng cookie.
+- [ ] Bổ sung unique constraint email/phone và kiểm thử tenant isolation bằng hai tenant thật giả lập.
 
-## Production candidate hardening
+## MVP production candidate — blocker cần hoàn thiện
 
-- [x] Bổ sung rate limiter memory dùng chung và interface thay thế Redis/API gateway khi scale nhiều instance.
-- [ ] Kết nối Redis hoặc API gateway rate limit thật khi chốt kiến trúc hosting production.
-- [ ] Bổ sung audit event chuẩn hóa cho thao tác bảo mật, đồng bộ và backup/restore.
-- [x] Bổ sung endpoint health/readiness an toàn, request ID và structured server log không chứa dữ liệu nhạy cảm.
-- [x] Bổ sung test router tenant A/B: snapshot, backup, restore, staff/owner và mutation nhạy cảm.
-- [x] Chuẩn hóa cấu hình Expo/Metro cho local native test và tài liệu fallback native build khi tunnel không ổn định.
-- [x] Bổ sung runbook monitoring, backup/restore và rollback production/staging.
-- [x] Chạy regression, bundle Web/Android/iOS, cập nhật tài liệu và tạo checkpoint.
+- [x] Thêm rate limit theo IP và identifier cho đăng nhập email/số điện thoại, đăng ký và staff PIN.
+- [x] Thêm CSRF protection cho các mutation Web dùng cookie, gồm profile, staff, snapshot và restore.
+- [ ] Tách rõ token response native khỏi Web hoặc giảm tối đa việc trả token trong response Web.
+- [x] Bổ sung giới hạn cấu trúc snapshot theo depth, số lượng phần tử và độ dài chuỗi.
+- [x] Thêm unique constraint database cho email và số điện thoại nullable, kèm migration an toàn.
+- [ ] Viết test tenant isolation giữa hai workspace và test owner/staff cho mọi route quản trị.
+- [x] Viết test rate limit, CSRF, payload giới hạn và không lộ dữ liệu nhạy cảm trong log.
+- [ ] Hoàn thiện production environment mapping, CORS_ORIGINS, cookie, database, backup, monitoring và rollback.
+- [ ] Chạy lại dependency audit trong môi trường registry ổn định.
+- [ ] Chạy DEVICE_TEST_CHECKLIST.md trên iPhone và Android thật.
+- [x] Chạy full regression, export Web/Android/iOS và tạo checkpoint MVP production candidate.
+
+## Tenant, thiết bị thật và production go-live
+
+- [ ] Kiểm thử hai tenant bằng tài khoản giả lập an toàn: đọc/ghi snapshot, backup, restore, audit và thành viên không truy cập chéo.
+- [ ] Kiểm thử owner/staff theo từng route quản trị và xác nhận dữ liệu seller/audit đúng tenant.
+- [ ] Hoàn tất checklist iPhone/Android thật cho camera, SecureStore/session, offline, chia sẻ, in, deep link và mất mạng.
+- [x] Ghi nhận rõ các bước không thể thực hiện trong sandbox và hướng dẫn người dùng xác nhận trên thiết bị thật.
+- [ ] Hoàn thiện mapping domain HTTPS, CORS_ORIGINS, cookie, API base URL và database production.
+- [ ] Hoàn thiện kế hoạch backup/restore, monitoring, alerting và rollback production.
+- [x] Chạy regression cuối, cập nhật checklist go-live và tạo checkpoint bàn giao.
+- [x] Kiểm thử mô phỏng tenant A/B cho snapshot access và owner/staff guards.
+- [x] Tạo DEVICE_TEST_EXECUTION_LOG.md và PRODUCTION_MAPPING.md cho bước bàn giao.
+
+## Kiểm thử điện thoại qua server
+
+- [x] Khởi động Web/Expo server và xác nhận điện thoại cùng Wi-Fi truy cập được.
+- [x] Gửi URL/QR và hướng dẫn kiểm thử trên điện thoại.
+
+## Expo Go connectivity
+
+- [x] Kiểm tra và khởi động Metro server đúng cho Expo Go, ưu tiên tunnel/public URL khi điện thoại không cùng mạng.
+- [x] Xác minh QR/URL Metro và hướng dẫn phân biệt Expo Go với Web preview.
+
+## Expo Go manifest fix
+
+- [ ] Ngăn dùng URL Web preview `exp://8081-...manus.computer` trong Expo Go.
+- [ ] Xác minh Metro manifest mobile và cung cấp URL `exp://...exp.direct` hợp lệ cho iPhone.
+
+## Expo Go QR session
+
+- [x] Khởi động Metro Expo và xác minh manifest mobile hợp lệ.
+- [x] Tạo mã QR Expo Go từ URL Metro hợp lệ, không dùng URL Web preview.
+
+## Expo Go manifest retry
+
+- [ ] Kiểm tra lại manifest theo header iOS/Expo và trạng thái tunnel sau lỗi lặp lại.
+- [ ] Không tiếp tục phát QR nếu URL không trả manifest native ổn định.
+- [ ] Chuẩn bị phương án build native/Publish thay cho Expo Go nếu tunnel sandbox không tương thích.
+
+## Direct Expo CLI session
+
+- [x] Chạy trực tiếp `npx expo start` trong project và kiểm tra Metro/QR native.
+
+## Native build fallback
+
+- [ ] Xác minh lại native export hiện có và chuẩn bị hướng dẫn cài build trực tiếp thay cho Expo Go tunnel.
+- [ ] Ghi nhận Expo Go tunnel không phù hợp với sandbox để tránh tiếp tục dùng QR không ổn định.
+
+## Tài liệu bàn giao local
+
+- [x] Tạo file Markdown tổng hợp tính năng đã làm, chưa làm và giới hạn production.
+- [x] Tạo hướng dẫn cài đặt công cụ, chạy Web/API/Expo local và quy trình chỉnh sửa code.
+
+## Git delivery
+
+- [x] Rà soát diff và loại trừ secret/file tạm trước commit.
+- [x] Chạy kiểm tra nhanh, commit và push thay đổi local lên GitHub.
+
+## Full Git push review
+
+- [ ] Rà soát toàn bộ thay đổi local còn chưa push và loại trừ secret/file tạm.
+- [ ] Commit và push đầy đủ mã nguồn/tài liệu hợp lệ lên GitHub.

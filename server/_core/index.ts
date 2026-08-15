@@ -2,18 +2,23 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
-import { parse as parseCookie } from "cookie";
-import { randomUUID } from "crypto";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { createCsrfToken, CSRF_COOKIE_NAME, csrfMatches, readCookie } from "../security";
+import { COOKIE_NAME } from "../../shared/const";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { isDatabaseAvailable } from "../db";
-import { AUTH_RATE_LIMIT, PIN_RATE_LIMIT, clientAddress, createRequestId, localRateLimitStore, operationalLog } from "../operational";
-import { COOKIE_NAME } from "../../shared/const";
+import {
+  AUTH_RATE_LIMIT,
+  PIN_RATE_LIMIT,
+  clientAddress,
+  createRequestId,
+  localRateLimitStore,
+  operationalLog,
+} from "../operational";
 
-const CSRF_COOKIE_NAME = "taphoa_csrf";
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -28,9 +33,7 @@ function isPortAvailable(port: number): Promise<boolean> {
 
 async function findAvailablePort(startPort: number = 3000): Promise<number> {
   for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) {
-      return port;
-    }
+    if (await isPortAvailable(port)) return port;
   }
   throw new Error(`No available port found starting from ${startPort}`);
 }
@@ -38,7 +41,6 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
-
   const production = process.env.NODE_ENV === "production";
   const allowedOrigins = new Set(
     (process.env.CORS_ORIGINS ?? "")
@@ -64,54 +66,52 @@ async function startServer() {
     next();
   });
 
-  // Production only accepts explicitly configured browser origins. Development may use local origins.
   app.use((req, res, next) => {
-    const origin = req.headers.origin;
+    if (!readCookie(req, CSRF_COOKIE_NAME)) {
+      res.cookie(CSRF_COOKIE_NAME, createCsrfToken(), {
+        httpOnly: false,
+        sameSite: "lax",
+        secure: production || req.secure || req.header("x-forwarded-proto") === "https",
+        path: "/",
+      });
+    }
+
+    const origin = typeof req.headers.origin === "string" ? req.headers.origin : undefined;
     const originAllowed = Boolean(origin && (!production || allowedOrigins.has(origin)));
     if (origin && originAllowed) {
       res.header("Access-Control-Allow-Origin", origin);
       res.header("Vary", "Origin");
+      res.header("Access-Control-Allow-Credentials", "true");
     }
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept, Authorization, X-CSRF-Token, X-Request-Id",
-    );
-    if (originAllowed) res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, X-CSRF-Token, X-Request-Id, X-Client-Platform");
 
     if (req.method === "OPTIONS") {
       if (origin && !originAllowed) return res.sendStatus(403);
-      res.sendStatus(204);
-      return;
+      return res.sendStatus(204);
     }
     next();
   });
 
   app.use(express.json({ limit: "6mb" }));
-  app.use(express.urlencoded({ limit: "6mb", extended: true }));
-
-  app.use((req, res, next) => {
-    const cookies = parseCookie(req.headers.cookie ?? "");
-    const csrfToken = cookies[CSRF_COOKIE_NAME] ?? randomUUID();
-    if (!cookies[CSRF_COOKIE_NAME]) {
-      res.cookie(CSRF_COOKIE_NAME, csrfToken, {
-        httpOnly: false,
-        secure: production || req.secure || req.header("x-forwarded-proto") === "https",
-        sameSite: "lax",
-        path: "/",
-      });
-    }
-    (req as express.Request & { csrfToken?: string }).csrfToken = csrfToken;
-    next();
-  });
+  app.use(express.urlencoded({ limit: "1mb", extended: true }));
 
   app.use("/api/trpc", (req, res, next) => {
     const path = req.path;
-    const policy = path.includes("staffPinLogin") ? PIN_RATE_LIMIT : path.includes("credentialsLogin") || path.includes("credentialsRegister") || path.includes("requestPasswordReset") || path.includes("verifyPasswordResetOtp") ? AUTH_RATE_LIMIT : undefined;
+    const policy = path.includes("staffPinLogin")
+      ? PIN_RATE_LIMIT
+      : path.includes("credentialsLogin") || path.includes("credentialsRegister") || path.includes("requestPasswordReset") || path.includes("verifyPasswordResetOtp")
+        ? AUTH_RATE_LIMIT
+        : undefined;
     if (!policy) return next();
-    const result = localRateLimitStore.consume(`auth:${clientAddress(req.headers, req.socket.remoteAddress)}:${path}`, policy);
+
+    const result = localRateLimitStore.consume(
+      `auth:${clientAddress(req.headers, req.socket.remoteAddress)}:${path}`,
+      policy,
+    );
     res.setHeader("RateLimit-Remaining", String(result.remaining));
     if (result.allowed) return next();
+
     res.setHeader("Retry-After", String(Math.ceil(result.retryAfterMs / 1000)));
     operationalLog("warn", "rate_limit_exceeded", { requestId: req.header("x-request-id"), path });
     return res.status(429).json({ error: "Yêu cầu quá nhiều lần. Vui lòng thử lại sau." });
@@ -119,11 +119,9 @@ async function startServer() {
 
   app.use("/api/trpc", (req, res, next) => {
     if (SAFE_METHODS.has(req.method)) return next();
-    const cookies = parseCookie(req.headers.cookie ?? "");
-    const hasCookieSession = Boolean(cookies[COOKIE_NAME]);
+    const hasCookieSession = Boolean(readCookie(req, COOKIE_NAME));
     const hasBearerToken = Boolean(req.header("authorization"));
-    const expected = (req as express.Request & { csrfToken?: string }).csrfToken;
-    if (hasCookieSession && !hasBearerToken && req.header("x-csrf-token") !== expected) {
+    if (hasCookieSession && !hasBearerToken && !csrfMatches(req)) {
       operationalLog("warn", "csrf_rejected", { requestId: req.header("x-request-id"), path: req.path });
       return res.status(403).json({ error: "CSRF token không hợp lệ." });
     }
@@ -140,7 +138,14 @@ async function startServer() {
   app.get("/api/readiness", async (req, res) => {
     const databaseRequired = production || process.env.REQUIRE_DATABASE === "true";
     const databaseReady = databaseRequired ? await isDatabaseAvailable() : true;
-    const payload = { ok: databaseReady, service: "taphoa-pos-api", databaseRequired, databaseReady, timestamp: Date.now(), requestId: req.header("x-request-id") };
+    const payload = {
+      ok: databaseReady,
+      service: "taphoa-pos-api",
+      databaseRequired,
+      databaseReady,
+      timestamp: Date.now(),
+      requestId: req.header("x-request-id"),
+    };
     res.status(databaseReady ? 200 : 503).json(payload);
   });
 
@@ -150,26 +155,15 @@ async function startServer() {
       router: appRouter,
       createContext,
       onError({ error, ctx, path, type }) {
-        operationalLog("warn", "trpc_error", {
-          requestId: ctx?.requestId,
-          path,
-          type,
-          code: error.code,
-        });
+        operationalLog("warn", "trpc_error", { requestId: ctx?.requestId, path, type, code: error.code });
       },
     }),
   );
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
-
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-  }
-
-  server.listen(port, () => {
-    console.log(`[api] server listening on port ${port}`);
-  });
+  if (port !== preferredPort) console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+  server.listen(port, () => console.log(`[api] server listening on port ${port}`));
 }
 
-startServer().catch(console.error);
+startServer().catch((error) => operationalLog("error", "server_start_failed", { error: error instanceof Error ? error.message : "unknown" }));
