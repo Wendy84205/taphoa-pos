@@ -377,6 +377,7 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [ ] Hoàn thiện Sign in with Google và bắt buộc kèm Sign in with Apple trên iOS, cùng test deep link/native token exchange.
 - [ ] Thiết kế IAP App Store và Google Play Billing thay cho thanh toán chuyển khoản trong app; đồng bộ entitlement server-side, restore, cancel và refund.
 - [ ] Tạo APK internal testing Android và iOS TestFlight build, chạy checklist thiết bị thật trước khi upload store.
+- [ ] Khởi tạo Expo EAS project ID và ghi vào Expo config trước khi tạo preview APK/TestFlight build.
 - [ ] Hoàn thiện asset/screenshot native, privacy labels/Data Safety, metadata và support/legal URLs cho từng store.
 
 ## Auth, trial và subscription production
