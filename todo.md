@@ -441,3 +441,13 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Kiểm tra giới hạn/khuôn dạng backup local trước restore và chặn payload có key nguy hiểm hoặc quá lớn.
 - [x] Reset/refetch cloud state theo user ID để không dùng cache snapshot tenant trước sau khi đổi tài khoản.
 - [x] Đồng bộ OAuth deep-link scheme với Expo config và thu hẹp bề mặt deep link không cần thiết.
+
+## Thiết kế mobile-first và tra giá bằng ảnh
+
+- [x] Tái cấu trúc điều hướng cho điện thoại: giữ Tra giá, Bán hàng và Hóa đơn là tác vụ chính; gom quản trị vào khu Tiện ích.
+- [x] Loại bỏ các nhánh, khung và nhãn giao diện dành cho laptop/Web còn sót trong app mobile-only.
+- [x] Thiết kế lại màn Tra giá theo thao tác một tay, ưu tiên chụp ảnh/quét mã/tìm nhanh và hành động thêm giỏ.
+- [x] Bổ sung luồng tra giá bằng ảnh: chụp/chọn ảnh, nhận diện gợi ý, đối sánh với catalog tại quán và yêu cầu người dùng xác nhận trước khi thêm giỏ.
+- [x] Bổ sung trạng thái quyền camera, đang nhận diện, không tìm thấy và ảnh mờ; không tự tạo giá hoặc sản phẩm từ suy đoán AI.
+- [x] Kiểm thử TypeScript, lint, unit test và Expo native config cho luồng tra giá mobile với dữ liệu sản phẩm hiện có.
+- [ ] Kiểm thử trên iPhone/Android thật: quyền camera, chụp/chọn ảnh, mạng lỗi, nhận diện và xác nhận trước khi thêm vào giỏ.
