@@ -25,7 +25,6 @@ const config: ExpoConfig = {
   newArchEnabled: true,
   ios: { supportsTablet: true, bundleIdentifier: env.iosBundleId, buildNumber: "1", infoPlist: { ITSAppUsesNonExemptEncryption: false, NSAppTransportSecurity: { NSAllowsLocalNetworking: true } } },
   android: { adaptiveIcon: { backgroundColor: "#F7F7F2", foregroundImage: "./assets/images/android-icon-foreground.png", backgroundImage: "./assets/images/android-icon-background.png", monochromeImage: "./assets/images/android-icon-monochrome.png" }, edgeToEdgeEnabled: true, predictiveBackGestureEnabled: false, package: env.androidPackage, versionCode: 1, permissions: ["POST_NOTIFICATIONS"], intentFilters: [{ action: "VIEW", data: [{ scheme: env.scheme, host: "oauth", pathPrefix: "/callback" }], category: ["BROWSABLE", "DEFAULT"] }] },
-  web: { bundler: "metro", output: "static", favicon: "./assets/images/favicon.png" },
   plugins: [
     "expo-router",
     "expo-asset",

@@ -1,9 +1,0 @@
-{
-  "buildCommand": "pnpm web:build",
-  "outputDirectory": ".web-preview",
-  "rewrites": [
-    { "source": "/api", "destination": "/api" },
-    { "source": "/api/:path*", "destination": "/api" },
-    { "source": "/:path*", "destination": "/index.html" }
-  ]
-}

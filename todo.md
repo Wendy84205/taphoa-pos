@@ -370,10 +370,10 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 
 ## Ưu tiên phát hành native-only
 
-- [ ] Tạm dừng Vercel/Web; chỉ xử lý Android/iOS native cho đến khi hoàn tất Google Play và App Store readiness.
+- [x] Tạm dừng Vercel/Web; chỉ xử lý Android/iOS native cho đến khi hoàn tất Google Play và App Store readiness.
 - [x] Lập inventory Website/landing/static export/deploy Web để xóa, bảo đảm không nhầm các module React Native hoặc backend API dùng chung.
-- [ ] Tạo checkpoint trước khi xóa và loại bỏ Website/landing/static Web cùng cấu hình Vercel/Web-only; giữ Expo iOS/Android và Express API.
-- [ ] Kiểm tra TypeScript, lint, test và native export iOS/Android sau khi chuyển mobile-only đa nền tảng.
+- [x] Tạo checkpoint trước khi xóa và loại bỏ Website/landing/static Web cùng cấu hình Vercel/Web-only; giữ Expo iOS/Android và Express API.
+- [x] Kiểm tra TypeScript, lint, test và Expo native config sau khi chuyển mobile-only đa nền tảng; native EAS build/thiết bị thật giữ ở bước release.
 - [ ] Hoàn thiện Sign in with Google và bắt buộc kèm Sign in with Apple trên iOS, cùng test deep link/native token exchange.
 - [ ] Thiết kế IAP App Store và Google Play Billing thay cho thanh toán chuyển khoản trong app; đồng bộ entitlement server-side, restore, cancel và refund.
 - [ ] Tạo APK internal testing Android và iOS TestFlight build, chạy checklist thiết bị thật trước khi upload store.
