@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AUTH_RATE_LIMIT, MemoryRateLimitStore, redactOperationalData } from "../server/operational";
+import { AUTH_RATE_LIMIT, MemoryRateLimitStore, UpstashRedisRateLimitStore, createConfiguredRateLimitStore, redactOperationalData } from "../server/operational";
 import { validateSnapshotPayload } from "../server/snapshot-validation";
 
 describe("production hardening helpers", () => {
@@ -35,5 +35,29 @@ describe("production hardening helpers", () => {
 
   it("accepts a normal POS snapshot", () => {
     expect(validateSnapshotPayload({ products: [{ id: "milk", stock: 10 }], invoices: [] })).toMatchObject({ valid: true });
+  });
+
+  it("keeps memory limiting when Upstash credentials are absent", () => {
+    expect(createConfiguredRateLimitStore({} as NodeJS.ProcessEnv)).toBeInstanceOf(MemoryRateLimitStore);
+  });
+
+  it("uses atomic Redis response semantics for a configured Upstash store", async () => {
+    const originalFetch = global.fetch;
+    global.fetch = (async () => new Response(JSON.stringify({ result: [11, 12_000] }), { status: 200 })) as typeof fetch;
+    try {
+      const store = new UpstashRedisRateLimitStore("https://example.upstash.io", "token");
+      await expect(store.consume("login:1", { limit: 10, windowMs: 15_000 })).resolves.toEqual({ allowed: false, remaining: 0, retryAfterMs: 12_000 });
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  const hasUpstashCredentials = Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+  it.skipIf(!hasUpstashCredentials)("verifies the configured Upstash Redis credentials with PING", async () => {
+    const store = new UpstashRedisRateLimitStore(
+      process.env.UPSTASH_REDIS_REST_URL!,
+      process.env.UPSTASH_REDIS_REST_TOKEN!,
+    );
+    await expect(store.ping()).resolves.toBe(true);
   });
 });

@@ -329,3 +329,11 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Bổ sung runbook production, hướng dẫn Metro local/native build và fallback Expo Go tunnel.
 - [x] Chạy regression sau merge: 35 tests passed, 1 skipped; TypeScript, lint và server build đạt.
 - [ ] Hoàn thành checklist iPhone/Android thật, tenant authenticated staging và mapping secret/domain/database production.
+
+## Redis, staging tenant và native release
+
+- [x] Bổ sung adapter Upstash Redis REST-compatible cho rate limit, giữ fallback memory, Lua atomic counter và test contract/PING opt-in.
+- [x] Chuẩn bị environment variables và staging runbook cho Redis, database và hai tenant test tách biệt.
+- [ ] Chạy tenant isolation authenticated trên staging khi có domain/database/account test.
+- [x] Hoàn thiện native build acceptance guide cho iPhone/Android; chờ người dùng cài build trực tiếp trên thiết bị thật.
+- [x] Chạy regression và export Web/iOS/Android sau adapter Redis; chờ checkpoint và GitHub.

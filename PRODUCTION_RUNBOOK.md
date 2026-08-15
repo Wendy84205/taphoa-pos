@@ -11,6 +11,7 @@ Tài liệu này mô tả cách vận hành phiên bản production candidate c�
 | OAuth | `VITE_APP_ID`, `OAUTH_SERVER_URL`, `VITE_OAUTH_PORTAL_URL` | Callback URL khớp domain HTTPS chính thức |
 | Web/mobile API | `EXPO_PUBLIC_API_BASE_URL` | HTTPS cố định; không dùng preview URL hoặc localhost |
 | CORS | `CORS_ORIGINS` | Danh sách origin cách nhau bằng dấu phẩy, chỉ gồm domain Web production/staging |
+| Global rate limit | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Redis REST production, dùng token Standard chỉ ở server |
 | Readiness | `REQUIRE_DATABASE=true` | Bắt buộc API trả 503 nếu database không sẵn sàng |
 
 Ví dụ định dạng `CORS_ORIGINS`:
@@ -35,7 +36,9 @@ Database phải có backup tự động mỗi ngày và giữ tối thiểu 14 b
 
 ## 4. Rate limit và mở rộng nhiều instance
 
-Rate limit hiện có adapter memory để bảo vệ một instance API. Khi chạy nhiều instance, phải thay adapter bằng Redis hoặc rate limit ở API gateway/WAF với chính sách tương đương. Không coi in-memory limiter là bảo vệ đủ cho production scale-out.
+Rate limit tự dùng memory khi không có Redis. Khi đặt cả `UPSTASH_REDIS_REST_URL` và `UPSTASH_REDIS_REST_TOKEN`, server dùng Upstash Redis REST qua Lua `EVAL` nguyên tử để tăng counter và TTL trong một thao tác. Khi Redis tạm lỗi, server ghi event `upstash_rate_limit_fallback` đã redact và hạ về memory để không làm ngừng bán hàng; cần cảnh báo event này vì fallback không chia sẻ giới hạn giữa các instance.
+
+Adapter dựa trên REST command body và `Authorization: Bearer` theo tài liệu Upstash; token Standard chỉ được giữ server-side, tuyệt đối không đưa vào Web/mobile bundle. Tham khảo [Upstash REST API](https://upstash.com/docs/redis/features/restapi) và [Lua EVAL atomic operations](https://upstash.com/blog/lua-scripting-on-upstash-redis-atomic-operations-over-http).
 
 | Luồng | Chính sách hiện tại | Khuyến nghị production nhiều instance |
 |---|---:|---|

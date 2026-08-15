@@ -14,8 +14,8 @@ import {
   AUTH_RATE_LIMIT,
   PIN_RATE_LIMIT,
   clientAddress,
+  createConfiguredRateLimitStore,
   createRequestId,
-  localRateLimitStore,
   operationalLog,
 } from "../operational";
 
@@ -42,6 +42,7 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
   const production = process.env.NODE_ENV === "production";
+  const rateLimitStore = createConfiguredRateLimitStore();
   const allowedOrigins = new Set(
     (process.env.CORS_ORIGINS ?? "")
       .split(",")
@@ -96,7 +97,7 @@ async function startServer() {
   app.use(express.json({ limit: "6mb" }));
   app.use(express.urlencoded({ limit: "1mb", extended: true }));
 
-  app.use("/api/trpc", (req, res, next) => {
+  app.use("/api/trpc", async (req, res, next) => {
     const path = req.path;
     const policy = path.includes("staffPinLogin")
       ? PIN_RATE_LIMIT
@@ -105,10 +106,20 @@ async function startServer() {
         : undefined;
     if (!policy) return next();
 
-    const result = localRateLimitStore.consume(
-      `auth:${clientAddress(req.headers, req.socket.remoteAddress)}:${path}`,
-      policy,
-    );
+    let result;
+    try {
+      result = await rateLimitStore.consume(
+        `auth:${clientAddress(req.headers, req.socket.remoteAddress)}:${path}`,
+        policy,
+      );
+    } catch (error) {
+      operationalLog("error", "rate_limit_unavailable", {
+        requestId: req.header("x-request-id"),
+        path,
+        error: error instanceof Error ? error.message : "unknown",
+      });
+      return res.status(503).json({ error: "Dịch vụ bảo mật tạm thời không sẵn sàng." });
+    }
     res.setHeader("RateLimit-Remaining", String(result.remaining));
     if (result.allowed) return next();
 
