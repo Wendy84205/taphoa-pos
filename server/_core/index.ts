@@ -39,9 +39,8 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
-async function startServer() {
+export function createApp() {
   const app = express();
-  const server = createServer(app);
   const production = process.env.NODE_ENV === "production";
   const rateLimitStore = createConfiguredRateLimitStore();
   const allowedOrigins = new Set(
@@ -173,10 +172,21 @@ async function startServer() {
     }),
   );
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
+  return app;
+}
+
+export async function startServer(app = createApp()) {
+  const server = createServer(app);
+  const preferredPort = parseInt(process.env.PORT || "3000", 10);
   const port = await findAvailablePort(preferredPort);
   if (port !== preferredPort) console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   server.listen(port, () => console.log(`[api] server listening on port ${port}`));
 }
 
-startServer().catch((error) => operationalLog("error", "server_start_failed", { error: error instanceof Error ? error.message : "unknown" }));
+const app = createApp();
+
+export default app;
+
+if (process.env.NODE_ENV !== "test" && !process.env.VITEST && !process.env.VERCEL) {
+  startServer(app).catch((error) => operationalLog("error", "server_start_failed", { error: error instanceof Error ? error.message : "unknown" }));
+}

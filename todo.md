@@ -288,6 +288,13 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Khởi động Metro Expo và xác minh manifest mobile hợp lệ.
 - [x] Tạo mã QR Expo Go từ URL Metro hợp lệ, không dùng URL Web preview.
 
+## Kiểm tra Expo Go sau khi người dùng cài ứng dụng
+
+- [x] Kiểm tra lại Metro manifest, URL native và khả năng mở Tạp Hóa POS bằng Expo Go.
+- [x] Cung cấp QR hợp lệ hoặc hướng dẫn chuyển sang preview build native nếu tunnel không tương thích.
+- [x] Ghi nhận Expo Go báo “There was a problem running the requested app”; không tiếp tục dùng tunnel sandbox để kiểm thử.
+- [ ] Chuẩn bị native preview build cài trực tiếp trên Android/iPhone để kiểm thử ổn định.
+
 ## Expo Go manifest retry
 
 - [ ] Kiểm tra lại manifest theo header iOS/Expo và trạng thái tunnel sau lỗi lặp lại.
@@ -375,6 +382,42 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [ ] Hoàn thiện legal/compliance: điều khoản sử dụng, chính sách hoàn tiền, consent, hóa đơn/chứng từ và support contact.
 - [ ] Rà soát bảo mật sâu và regression Web/iOS/Android sau khi thêm entitlement, Stripe và Google OAuth.
 - [x] Hoàn tất code review, TypeScript, lint, regression, Web export và rà soát log/secret; dependency audit production cần chạy lại trên CI do sandbox hết bộ nhớ.
+
+## Kích hoạt authentication, subscription và store release
+
+- [x] Chốt phương án billing: cổng thanh toán Việt Nam cho Web; IAP/Play Billing cho quyền dùng trong ứng dụng mobile.
+- [ ] Chọn cổng thanh toán Việt Nam cụ thể (VNPay, MoMo hoặc ZaloPay), ký hợp đồng merchant và chuẩn bị mô hình giá, thuế/hóa đơn cùng tài khoản ngân hàng nhận tiền.
+- [ ] Cấu hình tài khoản ngân hàng cá nhân/VietQR cho gói Web và quy trình xác nhận chuyển khoản thủ công chỉ bởi owner trước khi cấp entitlement.
+- [ ] Hiển thị rõ thanh toán chuyển khoản cá nhân không có auto-renew; gửi nhắc gia hạn và tạo VietQR mới khi gần hết quyền dùng.
+- [ ] Chuyển sang MoMo/ZaloPay hoặc merchant gateway khi cần webhook đối soát và auto-renew đã được người dùng ủy quyền.
+- [ ] Thêm subscription payment order tách biệt khỏi hóa đơn POS, gồm mã tham chiếu duy nhất, gói, số tiền, trạng thái, hạn thanh toán và audit log.
+- [ ] Chỉ cho owner xác nhận/từ chối đơn chuyển khoản; xác nhận phải idempotent và gia hạn entitlement đúng 30 ngày.
+- [ ] Tạo VietQR subscription trên Web với số tiền/mã đơn server-side; không đưa số tài khoản cá nhân vào mã nguồn hoặc client bundle.
+- [ ] Hiển thị trạng thái chờ xác nhận, ngày hết hạn và nhắc gia hạn trên tài khoản; chặn staff tự cấp quyền.
+- [ ] Chốt domain HTTPS cho Web/API, hosting backend, MySQL production, email support, backup/monitoring và CORS/API base URL.
+- [ ] Tạo Google Cloud OAuth clients cho Web, Android và iOS; cấu hình redirect URI, package/bundle ID và Android SHA-1/SHA-256.
+- [ ] Triển khai và cấu hình Sign in with Apple cho iOS cùng backend xác minh identity token.
+- [ ] Chốt domain HTTPS API callback cho Google OAuth và xác minh bundle/package cùng deep-link scheme khớp native config.
+- [ ] Mua/đăng ký domain chính thức và trỏ DNS trước khi tạo Google OAuth production; không dùng URL preview tạm thời làm callback release.
+- [ ] Đánh giá phương án chạy API trên máy tại quán/máy cá nhân, gồm uptime, HTTPS, domain/DNS, backup, firewall, webhook và rủi ro mất kết nối.
+- [ ] Chốt fallback managed hosting cho API/OAuth/payment callback nếu máy tại quán không thể chạy liên tục hoặc không có public HTTPS ổn định.
+- [x] Chốt kiến trúc production: Vercel cho Web/Express API và MySQL managed; không dùng Mac Pro 2019 làm production server ở giai đoạn đầu.
+- [ ] Tạo Vercel project từ GitHub, cấu hình Express entrypoint/serverless, environment variables và custom domain cho Web/API.
+- [ ] Chọn MySQL managed, cấu hình SSL/connection pooling, migration staging–production, backup và restore drill.
+- [x] Chọn TiDB Cloud Starter làm MySQL managed tương thích `mysql2`/Drizzle cho Vercel.
+- [ ] Tạo TiDB Cloud Starter cluster/database staging và liên kết Vercel project qua integration hoặc `DATABASE_URL` có SSL.
+- [ ] Chạy migration staging, kiểm thử connection pool/readiness và backup/restore trước khi tạo database production.
+- [x] Thêm Express entrypoint tương thích Vercel, rewrite `/api/*`, build command và regression health-check không khởi động local listener trong test.
+- [ ] Khắc phục Vercel Project Settings đang dùng Output Directory `public`; đồng bộ build command và output Expo Web `.web-preview` trước khi redeploy staging.
+- [ ] Thiết lập Mac Pro 2019 làm API server: Homebrew, Node LTS, MySQL, launchd/PM2, firewall, sleep/power settings và health check.
+- [ ] Chọn domain/DNS và HTTPS công khai cho Mac server; kiểm tra public IP hoặc tunnel an toàn trước khi tạo OAuth callback production.
+- [ ] Cấu hình backup mã hóa ngoài máy và quy trình restore cho database/snapshot; kiểm thử mất điện, mất mạng và auto-restart.
+- [ ] Hoàn thiện Google OAuth consent screen, authorized domain và test users trước khi chuyển trạng thái production.
+- [ ] Lưu Google OAuth server secret qua cấu hình bảo mật; không commit client secret hoặc tệp Google Cloud xuống Git.
+- [ ] Giữ Stripe ở trạng thái không kích hoạt; thay Checkout/Billing Portal bằng cổng thanh toán Việt Nam và webhook xác minh server-side.
+- [ ] Tạo subscription IAP trong App Store Connect và Play Console; tích hợp StoreKit/Play Billing, restore/refund/cancel và entitlement đồng bộ.
+- [ ] Hoàn thiện legal: terms, privacy, subscription disclosure, refund policy, support URL/email và Data Safety/Privacy Nutrition labels.
+- [ ] Tạo TestFlight và Google Play internal testing builds, chạy acceptance test thiết bị thật và hoàn tất metadata/screenshot store.
 
 ## Security audit toàn diện
 
