@@ -317,3 +317,15 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 
 - [ ] Rà soát toàn bộ thay đổi local còn chưa push và loại trừ secret/file tạm.
 - [ ] Commit và push đầy đủ mã nguồn/tài liệu hợp lệ lên GitHub.
+
+## Production candidate hardening
+
+- [x] Bổ sung rate limiter memory dùng chung và interface thay thế Redis/API gateway khi scale nhiều instance.
+- [ ] Kết nối Redis hoặc API gateway rate limit thật khi chốt kiến trúc hosting production.
+- [ ] Chuẩn hóa audit event cho thao tác bảo mật, đồng bộ và backup/restore.
+- [x] Bổ sung CSRF cookie/header, CORS allowlist production, body limit và snapshot validation.
+- [x] Bổ sung endpoint health/readiness, request ID và structured log có redaction dữ liệu nhạy cảm.
+- [x] Bổ sung test router tenant A/B, backup/restore, owner/staff guard và security helper.
+- [x] Bổ sung runbook production, hướng dẫn Metro local/native build và fallback Expo Go tunnel.
+- [x] Chạy regression sau merge: 35 tests passed, 1 skipped; TypeScript, lint và server build đạt.
+- [ ] Hoàn thành checklist iPhone/Android thật, tenant authenticated staging và mapping secret/domain/database production.
