@@ -4,6 +4,7 @@ import superjson from "superjson";
 import type { AppRouter } from "@/server/routers";
 import { getApiBaseUrl } from "@/constants/oauth";
 import * as Auth from "@/lib/_core/auth";
+import { Platform } from "react-native";
 
 /**
  * tRPC React client for type-safe API calls.
@@ -13,6 +14,15 @@ import * as Auth from "@/lib/_core/auth";
  * use the same serialization format (superjson).
  */
 export const trpc = createTRPCReact<AppRouter>();
+
+function getCsrfToken(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  return document.cookie
+    .split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith("taphoa_csrf="))
+    ?.slice("taphoa_csrf=".length);
+}
 
 /**
  * Creates the tRPC client with proper configuration.
@@ -27,7 +37,12 @@ export function createTRPCClient() {
         transformer: superjson,
         async headers() {
           const token = await Auth.getSessionToken();
-          return token ? { Authorization: `Bearer ${token}` } : {};
+          const csrfToken = getCsrfToken();
+          return {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+            "x-client-platform": Platform.OS,
+          };
         },
         // Custom fetch to include credentials for cookie-based auth
         fetch(url, options) {

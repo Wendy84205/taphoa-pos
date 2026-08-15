@@ -226,3 +226,19 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Bổ sung test tính giá khuyến mãi, combo, hoàn tiền/ghi nợ và đối soát.
 - [x] Tạo checklist kiểm thử iPhone/Android thật cho camera, SecureStore, offline, chia sẻ file và in.
 - [x] Export bundle Web/Android/iOS và cập nhật hướng dẫn cài đặt kiểm thử thiết bị.
+
+## Rà soát thiếu sót Web và app
+
+- [ ] Lập ma trận phần đã có, phần chưa hoàn thiện và phần cần kiểm thử thật trên Web/app.
+- [ ] Cập nhật backlog ưu tiên trước khi public production.
+
+## Production candidate hardening
+
+- [x] Bổ sung rate limiter memory dùng chung và interface thay thế Redis/API gateway khi scale nhiều instance.
+- [ ] Kết nối Redis hoặc API gateway rate limit thật khi chốt kiến trúc hosting production.
+- [ ] Bổ sung audit event chuẩn hóa cho thao tác bảo mật, đồng bộ và backup/restore.
+- [x] Bổ sung endpoint health/readiness an toàn, request ID và structured server log không chứa dữ liệu nhạy cảm.
+- [x] Bổ sung test router tenant A/B: snapshot, backup, restore, staff/owner và mutation nhạy cảm.
+- [x] Chuẩn hóa cấu hình Expo/Metro cho local native test và tài liệu fallback native build khi tunnel không ổn định.
+- [x] Bổ sung runbook monitoring, backup/restore và rollback production/staging.
+- [x] Chạy regression, bundle Web/Android/iOS, cập nhật tài liệu và tạo checkpoint.

@@ -8,8 +8,12 @@ import { z } from "zod";
 import * as db from "./db";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import { hashPassword, normalizeEmail, normalizePhone, credentialsOpenId, validatePassword, validatePhone, verifyPassword } from "./credential-auth";
+import { validateSnapshotPayload } from "./snapshot-validation";
 
-const snapshotSchema = z.record(z.string(), z.unknown());
+const snapshotSchema = z.record(z.string(), z.unknown()).superRefine((snapshot, ctx) => {
+  const result = validateSnapshotPayload(snapshot);
+  if (!result.valid) ctx.addIssue({ code: "custom", message: result.reason });
+});
 const credentialSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3), password: z.string().min(8), name: z.string().trim().min(1).max(120).optional() });
 const profileSchema = z.object({ name: z.string().trim().min(1).max(120), email: z.string().trim().email().optional().or(z.literal("")), phone: z.string().trim().optional() });
 const resetIdentifierSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3) });
@@ -23,7 +27,9 @@ async function establishCredentialsSession(ctx: TrpcContext, user: NonNullable<A
   const token = await sdk.createSessionToken(user.openId, { name: user.name || user.email || user.phone || "Tạp Hóa POS" });
   const cookieOptions = getSessionCookieOptions(ctx.req);
   ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-  return { token, user: publicUser(user) };
+  const platform = String(ctx.req.headers["x-client-platform"] ?? "").toLowerCase();
+  const isWeb = platform === "web" || Boolean(ctx.req.headers.origin);
+  return { ...(isWeb ? {} : { token }), user: publicUser(user) };
 }
 
 export const appRouter = router({

@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, Store, StoreMember, auditLogs, authChallenges, posSnapshots, snapshotBackups, storeMembers, stores, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -111,6 +111,18 @@ export async function getWorkspaceForUser(userId: number): Promise<Workspace | n
   if (!membership) return null;
   const store = (await db.select().from(stores).where(eq(stores.id, membership.storeId)).limit(1))[0];
   return store ? { store, membership } : null;
+}
+
+/** Minimal readiness probe that never exposes database configuration or errors. */
+export async function isDatabaseAvailable(): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    await db.execute(sql`SELECT 1`);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function ensureWorkspaceForUser(userId: number, suggestedName?: string): Promise<Workspace | null> {

@@ -20,12 +20,12 @@ const dbMock = vi.hoisted(() => ({
 
 vi.mock("../server/db", () => dbMock);
 
-function context(): TrpcContext {
+function context(userId = 1): TrpcContext {
   return {
     user: {
-      id: 1,
-      openId: "test-owner",
-      email: "owner@example.com",
+      id: userId,
+      openId: `test-user-${userId}`,
+      email: `owner-${userId}@example.com`,
       phone: null,
       passwordHash: null,
       name: "Owner",
@@ -40,6 +40,7 @@ function context(): TrpcContext {
       cookie: vi.fn(),
       clearCookie: vi.fn(),
     } as unknown as TrpcContext["res"],
+    requestId: `request-${userId}`,
   };
 }
 
@@ -61,5 +62,28 @@ describe("workspace security guards", () => {
     dbMock.ensureWorkspaceForUser.mockResolvedValue({ store: { id: 7, storeType: "withStaff" }, membership: { storeId: 7, userId: 1, role: "staff", status: "active" } });
     const caller = appRouter.createCaller(context());
     await expect(caller.workspace.snapshot.push({ snapshot: {}, clientVersion: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("keeps snapshot reads scoped to the authenticated tenant", async () => {
+    dbMock.getSnapshotForUser.mockImplementation(async (userId: number) => ({
+      snapshot: { tenant: userId === 1 ? "A" : "B" },
+      version: userId,
+      updatedAt: new Date(),
+    }));
+
+    const tenantA = await appRouter.createCaller(context(1)).workspace.snapshot.get();
+    const tenantB = await appRouter.createCaller(context(2)).workspace.snapshot.get();
+
+    expect(tenantA?.snapshot).toEqual({ tenant: "A" });
+    expect(tenantB?.snapshot).toEqual({ tenant: "B" });
+    expect(dbMock.getSnapshotForUser).toHaveBeenNthCalledWith(1, 1);
+    expect(dbMock.getSnapshotForUser).toHaveBeenNthCalledWith(2, 2);
+  });
+
+  it("blocks staff from reading backups and restoring data", async () => {
+    dbMock.ensureWorkspaceForUser.mockResolvedValue({ store: { id: 7, storeType: "withStaff" }, membership: { storeId: 7, userId: 1, role: "staff", status: "active" } });
+    const caller = appRouter.createCaller(context());
+    await expect(caller.workspace.snapshot.backups()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.workspace.snapshot.restore({ backupId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });

@@ -38,6 +38,7 @@ function createAuthContext(): { ctx: TrpcContext; clearedCookies: CookieCall[] }
         clearedCookies.push({ name, options });
       },
     } as TrpcContext["res"],
+    requestId: "logout-test-request",
   };
   
   return { ctx, clearedCookies };
