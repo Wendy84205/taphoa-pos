@@ -1,8 +1,9 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, Store, StoreMember, auditLogs, authChallenges, posSnapshots, snapshotBackups, storeMembers, stores, users } from "../drizzle/schema";
+import { InsertStoreEntitlement, InsertUser, Store, StoreMember, StoreEntitlement, auditLogs, billingWebhookEvents, posSnapshots, snapshotBackups, storeEntitlements, storeMembers, stores, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { credentialsOpenId, hashPassword } from "./credential-auth";
+import { EntitlementSummary, TRIAL_DAYS, addTrialDays, resolveEntitlement } from "./entitlements";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -76,31 +77,6 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createAuthChallenge(input: { userId?: number; identifier: string; channel: "sms" | "email"; purpose: "login_otp" | "reset_password"; codeHash: string; expiresAt: Date }) {
-  const db = await getDb();
-  if (!db) throw new Error("Cloud database is not available");
-  await db.insert(authChallenges).values(input);
-}
-
-export async function getLatestAuthChallenge(identifier: string, purpose: "login_otp" | "reset_password") {
-  const db = await getDb();
-  if (!db) return undefined;
-  const rows = await db.select().from(authChallenges).where(and(eq(authChallenges.identifier, identifier), eq(authChallenges.purpose, purpose))).orderBy(desc(authChallenges.id)).limit(1);
-  return rows[0];
-}
-
-export async function consumeAuthChallenge(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Cloud database is not available");
-  await db.update(authChallenges).set({ consumedAt: new Date() }).where(eq(authChallenges.id, id));
-}
-
-export async function incrementAuthChallengeAttempts(id: number, attempts: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Cloud database is not available");
-  await db.update(authChallenges).set({ attempts }).where(eq(authChallenges.id, id));
-}
-
 export type Workspace = { store: Store; membership: StoreMember };
 
 export async function getWorkspaceForUser(userId: number): Promise<Workspace | null> {
@@ -134,8 +110,81 @@ export async function ensureWorkspaceForUser(userId: number, suggestedName?: str
   const store = (await db.select().from(stores).where(eq(stores.ownerUserId, userId)).orderBy(desc(stores.id)).limit(1))[0];
   if (!store) return null;
   await db.insert(storeMembers).values({ storeId: store.id, userId, role: "owner", status: "active" });
+  await createTrialEntitlementForStore(store.id);
   const membership = (await db.select().from(storeMembers).where(and(eq(storeMembers.storeId, store.id), eq(storeMembers.userId, userId))).limit(1))[0];
   return membership ? { store, membership } : null;
+}
+
+export async function createTrialEntitlementForStore(storeId: number, startedAt = new Date()) {
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  const values: InsertStoreEntitlement = {
+    storeId,
+    planCode: "trial",
+    status: "trialing",
+    source: "trial",
+    trialStartedAt: startedAt,
+    trialEndsAt: addTrialDays(startedAt, TRIAL_DAYS),
+  };
+  await db.insert(storeEntitlements).values(values).onDuplicateKeyUpdate({ set: { storeId: sql`${storeEntitlements.storeId}` } });
+  return getStoreEntitlement(storeId);
+}
+
+export async function getStoreEntitlement(storeId: number): Promise<StoreEntitlement | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(storeEntitlements).where(eq(storeEntitlements.storeId, storeId)).limit(1))[0];
+}
+
+export async function getEntitlementForUser(userId: number, now = new Date()): Promise<EntitlementSummary | null> {
+  const workspace = await getWorkspaceForUser(userId);
+  if (!workspace) return null;
+  const entitlement = await getStoreEntitlement(workspace.store.id);
+  const summary = resolveEntitlement(entitlement ?? null, now);
+  return { ...summary, storeId: workspace.store.id };
+}
+
+export async function updateStoreEntitlement(storeId: number, values: Partial<InsertStoreEntitlement>) {
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  await db.update(storeEntitlements).set(values).where(eq(storeEntitlements.storeId, storeId));
+  return getStoreEntitlement(storeId);
+}
+
+export async function setStripeCustomerForStore(storeId: number, stripeCustomerId: string) {
+  const current = await getStoreEntitlement(storeId);
+  if (current) return updateStoreEntitlement(storeId, { stripeCustomerId });
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  await db.insert(storeEntitlements).values({ storeId, planCode: "legacy", status: "legacy", source: "legacy", stripeCustomerId });
+  return getStoreEntitlement(storeId);
+}
+
+export async function upsertStripeEntitlement(storeId: number, values: { planCode: string; status: "active" | "grace" | "canceled"; source: "stripe"; currentPeriodEnd: Date | null; graceEndsAt: Date | null; stripeCustomerId: string; stripeSubscriptionId: string; cancelAtPeriodEnd: boolean }) {
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  await db.insert(storeEntitlements).values({ storeId, ...values }).onDuplicateKeyUpdate({ set: { ...values, updatedAt: new Date() } });
+  return getStoreEntitlement(storeId);
+}
+
+export async function hasBillingWebhookEvent(provider: "stripe" | "apple" | "google_play", providerEventId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  const rows = await db.select({ id: billingWebhookEvents.id }).from(billingWebhookEvents).where(and(eq(billingWebhookEvents.provider, provider), eq(billingWebhookEvents.providerEventId, providerEventId))).limit(1);
+  return Boolean(rows[0]);
+}
+
+/** Đánh dấu event provider đã xử lý; unique index đảm bảo retry webhook không cấp quyền hai lần. */
+export async function recordBillingWebhookEvent(input: { provider: "stripe" | "apple" | "google_play"; providerEventId: string; eventType: string; storeId?: number | null; payloadHash: string; processingStatus?: "processed" | "ignored" | "failed" }) {
+  const db = await getDb();
+  if (!db) throw new Error("Cloud database is not available");
+  try {
+    await db.insert(billingWebhookEvents).values({ ...input, storeId: input.storeId ?? null });
+    return true;
+  } catch (error) {
+    if (String(error).toLowerCase().includes("duplicate")) return false;
+    throw error;
+  }
 }
 
 export async function getSnapshotForUser(userId: number): Promise<{ snapshot: Record<string, unknown>; version: number; updatedAt: Date } | null> {

@@ -9,15 +9,16 @@ import * as db from "./db";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import { hashPassword, normalizeEmail, normalizePhone, credentialsOpenId, validatePassword, validatePhone, verifyPassword } from "./credential-auth";
 import { validateSnapshotPayload } from "./snapshot-validation";
+import { getGoogleOAuthReadiness } from "./google-auth-config";
+import { createStripeBillingPortal, createStripeCheckout, parseBillingPlan, stripeBillingReady } from "./stripe-billing";
 
 const snapshotSchema = z.record(z.string(), z.unknown()).superRefine((snapshot, ctx) => {
   const result = validateSnapshotPayload(snapshot);
   if (!result.valid) ctx.addIssue({ code: "custom", message: result.reason });
 });
-const credentialSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3), password: z.string().min(8), name: z.string().trim().min(1).max(120).optional() });
+const credentialSchema = z.object({ kind: z.literal("email"), identifier: z.string().min(3), password: z.string().min(8), name: z.string().trim().min(1).max(120).optional() });
 const profileSchema = z.object({ name: z.string().trim().min(1).max(120), email: z.string().trim().email().optional().or(z.literal("")), phone: z.string().trim().optional() });
-const resetIdentifierSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3) });
-const staffCreateSchema = z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3), name: z.string().trim().min(1).max(120), password: z.string().min(8), pin: z.string().regex(/^\d{4,6}$/, "PIN cần 4–6 chữ số.") });
+const staffCreateSchema = z.object({ kind: z.literal("email"), identifier: z.string().min(3), name: z.string().trim().min(1).max(120), password: z.string().min(8), pin: z.string().regex(/^\d{4,6}$/, "PIN cần 4–6 chữ số.") });
 
 function publicUser(user: NonNullable<Awaited<ReturnType<typeof db.getUserByOpenId>>>) {
   return { id: user.id, openId: user.openId, name: user.name, email: user.email, phone: user.phone, loginMethod: user.loginMethod, lastSignedIn: user.lastSignedIn };
@@ -32,19 +33,31 @@ async function establishCredentialsSession(ctx: TrpcContext, user: NonNullable<A
   return { ...(isWeb ? {} : { token }), user: publicUser(user) };
 }
 
+async function requireActiveEntitlement(userId: number) {
+  const entitlement = await db.getEntitlementForUser(userId);
+  if (!entitlement) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Không tìm thấy quyền sử dụng cho quán này." });
+  if (!entitlement.canAccess) {
+    throw new TRPCError({
+      code: "PAYMENT_REQUIRED",
+      message: entitlement.reason === "expired" ? "Bản dùng thử đã hết hạn. Vui lòng chọn gói để tiếp tục đồng bộ dữ liệu cloud." : "Cần cập nhật thanh toán để tiếp tục sử dụng dữ liệu cloud.",
+    });
+  }
+  return entitlement;
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
+    googleReadiness: publicProcedure.query(() => getGoogleOAuthReadiness()),
     credentialsRegister: publicProcedure.input(credentialSchema).mutation(async ({ ctx, input }) => {
-      const identifier = input.kind === "email" ? normalizeEmail(input.identifier) : normalizePhone(input.identifier);
-      if (input.kind === "email" && !/^\S+@\S+\.\S+$/.test(identifier)) throw new TRPCError({ code: "BAD_REQUEST", message: "Email chưa đúng định dạng." });
-      if (input.kind === "phone" && !validatePhone(identifier)) throw new TRPCError({ code: "BAD_REQUEST", message: "Số điện thoại Việt Nam chưa đúng định dạng." });
+      const identifier = normalizeEmail(input.identifier);
+      if (!/^\S+@\S+\.\S+$/.test(identifier)) throw new TRPCError({ code: "BAD_REQUEST", message: "Email chưa đúng định dạng." });
       if (!validatePassword(input.password)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mật khẩu cần ít nhất 8 ký tự." });
-      const existing = input.kind === "email" ? await db.getUserByEmail(identifier) : await db.getUserByPhone(identifier);
+      const existing = await db.getUserByEmail(identifier);
       if (existing?.passwordHash) throw new TRPCError({ code: "CONFLICT", message: "Thông tin đăng nhập đã tồn tại. Hãy đăng nhập hoặc dùng khôi phục mật khẩu." });
-      const openId = existing?.openId ?? credentialsOpenId(input.kind, identifier);
-      await db.upsertUser({ openId, name: input.name?.trim() || existing?.name || null, email: input.kind === "email" ? identifier : existing?.email ?? null, phone: input.kind === "phone" ? identifier : existing?.phone ?? null, passwordHash: hashPassword(input.password), loginMethod: input.kind === "email" ? "credentials_email" : "credentials_phone", lastSignedIn: new Date() });
+      const openId = existing?.openId ?? credentialsOpenId("email", identifier);
+      await db.upsertUser({ openId, name: input.name?.trim() || existing?.name || null, email: identifier, phone: existing?.phone ?? null, passwordHash: hashPassword(input.password), loginMethod: "credentials_email", lastSignedIn: new Date() });
       const user = await db.getUserByOpenId(openId);
       if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể tạo tài khoản lúc này." });
       return establishCredentialsSession(ctx, user);
@@ -75,15 +88,6 @@ export const appRouter = router({
       if (!updated) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể đổi mật khẩu." });
       return { success: true } as const;
     }),
-    requestPasswordReset: publicProcedure.input(resetIdentifierSchema).mutation(async ({ input }) => {
-      const identifier = input.kind === "email" ? normalizeEmail(input.identifier) : normalizePhone(input.identifier);
-      const providerConfigured = Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER);
-      if (!providerConfigured) return { accepted: false, providerConfigured: false, message: "SMS OTP chưa được cấu hình. Vui lòng liên hệ quản trị viên để khôi phục mật khẩu." };
-      return { accepted: false, providerConfigured: true, message: `Đã tiếp nhận yêu cầu cho ${identifier}; cần bật SMS adapter trước khi gửi mã.` };
-    }),
-    verifyPasswordResetOtp: publicProcedure.input(z.object({ kind: z.enum(["email", "phone"]), identifier: z.string().min(3), otp: z.string().regex(/^\d{6}$/), newPassword: z.string().min(8) })).mutation(async () => {
-      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "OTP SMS chưa được cấu hình nên chưa thể xác nhận mã." });
-    }),
     staffPinLogin: publicProcedure.input(z.object({ storeId: z.number().int().positive(), memberId: z.number().int().positive(), pin: z.string().regex(/^\d{4,6}$/) })).mutation(async ({ ctx, input }) => {
       const store = await db.getStoreById(input.storeId);
       if (!store || store.storeType !== "withStaff") throw new TRPCError({ code: "FORBIDDEN", message: "Quán này chưa bật chế độ Có nhân viên." });
@@ -103,8 +107,8 @@ export const appRouter = router({
       return establishCredentialsSession(ctx, user);
     }),
     credentialsLogin: publicProcedure.input(credentialSchema.omit({ name: true })).mutation(async ({ ctx, input }) => {
-      const identifier = input.kind === "email" ? normalizeEmail(input.identifier) : normalizePhone(input.identifier);
-      const user = input.kind === "email" ? await db.getUserByEmail(identifier) : await db.getUserByPhone(identifier);
+      const identifier = normalizeEmail(input.identifier);
+      const user = await db.getUserByEmail(identifier);
       if (!user || !verifyPassword(input.password, user.passwordHash)) throw new TRPCError({ code: "UNAUTHORIZED", message: "Thông tin đăng nhập không đúng." });
       await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
       const refreshed = await db.getUserByOpenId(user.openId);
@@ -117,11 +121,43 @@ export const appRouter = router({
       return { success: true } as const;
     }),
   }),
+  billing: router({
+    readiness: protectedProcedure.query(() => ({ stripeReady: stripeBillingReady() })),
+    startCheckout: protectedProcedure.input(z.object({ planCode: z.string() })).mutation(async ({ ctx, input }) => {
+      const planCode = parseBillingPlan(input.planCode);
+      if (!planCode) throw new TRPCError({ code: "BAD_REQUEST", message: "Gói thanh toán không hợp lệ." });
+      const workspace = await db.ensureWorkspaceForUser(ctx.user.id);
+      if (!workspace || workspace.membership.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ chủ quán được đăng ký gói." });
+      if (!stripeBillingReady()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Stripe chưa được cấu hình. Vui lòng hoàn tất setup quản trị trước khi thanh toán." });
+      try {
+        return await createStripeCheckout({ storeId: workspace.store.id, ownerEmail: ctx.user.email, ownerName: ctx.user.name, planCode });
+      } catch (error) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể tạo phiên thanh toán Stripe." });
+      }
+    }),
+    openPortal: protectedProcedure.mutation(async ({ ctx }) => {
+      const workspace = await db.ensureWorkspaceForUser(ctx.user.id);
+      if (!workspace || workspace.membership.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ chủ quán được quản lý thanh toán." });
+      if (!stripeBillingReady()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Stripe chưa được cấu hình." });
+      try {
+        return await createStripeBillingPortal({ storeId: workspace.store.id });
+      } catch (error) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Chưa có Stripe subscription để quản lý." });
+      }
+    }),
+  }),
   workspace: router({
     me: protectedProcedure.query(async ({ ctx }) => {
       const workspace = await db.ensureWorkspaceForUser(ctx.user.id, ctx.user.name ? `Quầy của ${ctx.user.name}` : undefined);
       if (!workspace) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể mở dữ liệu quán trên cloud." });
-      return workspace;
+      const entitlement = await db.getEntitlementForUser(ctx.user.id);
+      if (!entitlement) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể mở quyền sử dụng của quán." });
+      return { ...workspace, entitlement };
+    }),
+    entitlement: protectedProcedure.query(async ({ ctx }) => {
+      const entitlement = await db.getEntitlementForUser(ctx.user.id);
+      if (!entitlement) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy quyền sử dụng cho quán này." });
+      return entitlement;
     }),
     updateStoreType: protectedProcedure.input(z.object({ storeType: z.enum(["solo", "withStaff"]) })).mutation(async ({ ctx, input }) => {
       const updated = await db.updateStoreTypeForUser(ctx.user.id, input.storeType);
@@ -131,16 +167,17 @@ export const appRouter = router({
     staff: router({
       update: protectedProcedure.input(z.object({ memberId: z.number().int().positive(), status: z.enum(["active", "disabled"]).optional(), pin: z.string().regex(/^\d{4,6}$/).optional() })).mutation(async ({ ctx, input }) => {
         if (!input.status && !input.pin) throw new TRPCError({ code: "BAD_REQUEST", message: "Cần chọn trạng thái hoặc nhập PIN mới." });
+        await requireActiveEntitlement(ctx.user.id);
         const updated = await db.updateStoreStaff(ctx.user.id, input.memberId, { status: input.status, pinHash: input.pin ? hashPassword(input.pin) : undefined });
         if (!updated) throw new TRPCError({ code: "FORBIDDEN", message: "Không thể cập nhật nhân viên này." });
         return updated;
       }),
       create: protectedProcedure.input(staffCreateSchema).mutation(async ({ ctx, input }) => {
-        const identifier = input.kind === "email" ? normalizeEmail(input.identifier) : normalizePhone(input.identifier);
-        if (input.kind === "email" && !/^\S+@\S+\.\S+$/.test(identifier)) throw new TRPCError({ code: "BAD_REQUEST", message: "Email nhân viên chưa đúng định dạng." });
-        if (input.kind === "phone" && !validatePhone(identifier)) throw new TRPCError({ code: "BAD_REQUEST", message: "Số điện thoại nhân viên chưa đúng định dạng." });
+        const identifier = normalizeEmail(input.identifier);
+        if (!/^\S+@\S+\.\S+$/.test(identifier)) throw new TRPCError({ code: "BAD_REQUEST", message: "Email nhân viên chưa đúng định dạng." });
         const workspace = await db.ensureWorkspaceForUser(ctx.user.id);
         if (!workspace || workspace.membership.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ chủ quán được tạo nhân viên." });
+        await requireActiveEntitlement(ctx.user.id);
         try {
           const member = await db.createStoreStaff(ctx.user.id, { ...input, identifier, password: input.password, pinHash: hashPassword(input.pin) });
           if (!member) throw new Error("Không thể tạo nhân viên.");
@@ -165,6 +202,7 @@ export const appRouter = router({
         const workspace = await db.ensureWorkspaceForUser(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể mở quán." });
         if (workspace.membership.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Nhân viên chưa được phép ghi đè dữ liệu kho trên cloud." });
+        await requireActiveEntitlement(ctx.user.id);
         try {
           return await db.upsertSnapshotForUser(ctx.user.id, input.snapshot, input.clientVersion);
         } catch (error) {
@@ -182,6 +220,7 @@ export const appRouter = router({
         const workspace = await db.ensureWorkspaceForUser(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể mở quán." });
         if (workspace.membership.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ chủ quán được khôi phục backup." });
+        await requireActiveEntitlement(ctx.user.id);
         return db.restoreSnapshotBackupForUser(ctx.user.id, input.backupId);
       }),
     }),

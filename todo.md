@@ -364,11 +364,14 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 ## Auth, trial và subscription production
 
 - [x] Lập báo cáo ma trận hiện trạng và cấu hình còn thiếu cho auth, trial, subscription/payment.
+- [x] Gỡ OTP/SMS khỏi toàn bộ luồng đăng ký, đăng nhập và khôi phục mật khẩu; chỉ giữ số điện thoại là trường hồ sơ tùy chọn.
+- [x] Chuẩn bị Stripe và Google OAuth ở trạng thái chưa kích hoạt; hoãn nhập credentials và hướng dẫn setup sau theo yêu cầu người dùng.
 - [ ] Cấu hình OAuth Google production cho Web, iOS và Android với redirect URI/domain/bundle ID chính thức.
-- [ ] Chọn và tích hợp xác thực số điện thoại/SMS OTP production, gồm anti-abuse, consent và chi phí gửi tin.
-- [ ] Thiết kế subscription model: gói, entitlement, trial 15 ngày, giới hạn và trạng thái hết hạn/grace period.
-- [ ] Tích hợp thanh toán Web tương thích Việt Nam và webhook xác thực server-side cho subscription.
+- [x] Thiết kế subscription model: gói, entitlement, trial 15 ngày, giới hạn và trạng thái hết hạn/grace period.
+- [ ] Tích hợp Stripe Checkout/Billing Portal và webhook xác thực server-side cho subscription Web.
 - [ ] Tích hợp In-App Purchase/StoreKit cho iOS và Google Play Billing cho Android khi bán digital subscription trong app.
 - [ ] Đồng bộ entitlement giữa Web/iOS/Android, gồm khôi phục giao dịch và auto-renew/cancel/refund.
 - [ ] Cấu hình database production cho user/subscription/payment event, idempotency, audit, webhook queue và reconciliation.
 - [ ] Hoàn thiện legal/compliance: điều khoản sử dụng, chính sách hoàn tiền, consent, hóa đơn/chứng từ và support contact.
+- [ ] Rà soát bảo mật sâu và regression Web/iOS/Android sau khi thêm entitlement, Stripe và Google OAuth.
+- [x] Hoàn tất code review, TypeScript, lint, regression, Web export và rà soát log/secret; dependency audit production cần chạy lại trên CI do sandbox hết bộ nhớ.

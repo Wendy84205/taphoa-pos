@@ -7,6 +7,7 @@ import { createCsrfToken, CSRF_COOKIE_NAME, csrfMatches, readCookie } from "../s
 import { COOKIE_NAME } from "../../shared/const";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
+import { registerStripeWebhookRoute } from "../stripe-billing";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { isDatabaseAvailable } from "../db";
@@ -94,6 +95,7 @@ async function startServer() {
     next();
   });
 
+  registerStripeWebhookRoute(app);
   app.use(express.json({ limit: "6mb" }));
   app.use(express.urlencoded({ limit: "1mb", extended: true }));
 

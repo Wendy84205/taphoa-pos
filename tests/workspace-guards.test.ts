@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { appRouter } from "../server/routers";
 import type { TrpcContext } from "../server/_core/context";
 
@@ -16,6 +16,7 @@ const dbMock = vi.hoisted(() => ({
   updateStoreMemberPinState: vi.fn(),
   getUserById: vi.fn(),
   getUserByOpenId: vi.fn(),
+  getEntitlementForUser: vi.fn(),
 }));
 
 vi.mock("../server/db", () => dbMock);
@@ -45,6 +46,10 @@ function context(userId = 1): TrpcContext {
 }
 
 describe("workspace security guards", () => {
+  beforeEach(() => {
+    dbMock.getEntitlementForUser.mockResolvedValue({ canAccess: true, status: "trialing", reason: "trial" });
+  });
+
   it("rejects PIN login when the store is Solo", async () => {
     dbMock.getStoreById.mockResolvedValue({ id: 7, storeType: "solo" });
     const caller = appRouter.createCaller(context());
@@ -62,6 +67,13 @@ describe("workspace security guards", () => {
     dbMock.ensureWorkspaceForUser.mockResolvedValue({ store: { id: 7, storeType: "withStaff" }, membership: { storeId: 7, userId: 1, role: "staff", status: "active" } });
     const caller = appRouter.createCaller(context());
     await expect(caller.workspace.snapshot.push({ snapshot: {}, clientVersion: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("blocks owner cloud writes after an expired trial without blocking local offline data", async () => {
+    dbMock.ensureWorkspaceForUser.mockResolvedValue({ store: { id: 7, storeType: "solo" }, membership: { storeId: 7, userId: 1, role: "owner", status: "active" } });
+    dbMock.getEntitlementForUser.mockResolvedValue({ canAccess: false, status: "expired", reason: "expired" });
+    const caller = appRouter.createCaller(context());
+    await expect(caller.workspace.snapshot.push({ snapshot: {}, clientVersion: 0 })).rejects.toMatchObject({ code: "PAYMENT_REQUIRED" });
   });
 
   it("keeps snapshot reads scoped to the authenticated tenant", async () => {

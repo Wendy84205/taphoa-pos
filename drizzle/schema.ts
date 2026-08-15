@@ -20,6 +20,7 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+/** Bảng lịch sử legacy; không còn route hay UI OTP/SMS nào gọi đến. Giữ nguyên để migration không xóa dữ liệu cũ. */
 export const authChallenges = mysqlTable("authChallenges", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId"),
@@ -32,9 +33,6 @@ export const authChallenges = mysqlTable("authChallenges", {
   consumedAt: timestamp("consumedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
-
-export type AuthChallenge = typeof authChallenges.$inferSelect;
-export type InsertAuthChallenge = typeof authChallenges.$inferInsert;
 
 /** Một quán/tài khoản kinh doanh độc lập trong hệ thống cloud. */
 export const stores = mysqlTable("stores", {
@@ -84,6 +82,47 @@ export const storeInvitations = mysqlTable("storeInvitations", {
 
 export type StoreInvitation = typeof storeInvitations.$inferSelect;
 export type InsertStoreInvitation = typeof storeInvitations.$inferInsert;
+
+/** Quyền sử dụng duy nhất cho từng tenant. Server là nguồn quyết định quyền, không tin trạng thái client. */
+export const storeEntitlements = mysqlTable("storeEntitlements", {
+  id: int("id").autoincrement().primaryKey(),
+  storeId: int("storeId").notNull(),
+  planCode: varchar("planCode", { length: 64 }).default("trial").notNull(),
+  status: mysqlEnum("status", ["trialing", "active", "past_due", "grace", "canceled", "expired", "legacy"]).default("trialing").notNull(),
+  source: mysqlEnum("source", ["trial", "stripe", "apple", "google_play", "manual", "legacy"]).default("trial").notNull(),
+  trialStartedAt: timestamp("trialStartedAt"),
+  trialEndsAt: timestamp("trialEndsAt"),
+  currentPeriodEnd: timestamp("currentPeriodEnd"),
+  graceEndsAt: timestamp("graceEndsAt"),
+  stripeCustomerId: varchar("stripeCustomerId", { length: 255 }),
+  stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 255 }),
+  cancelAtPeriodEnd: boolean("cancelAtPeriodEnd").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  storeUnique: uniqueIndex("store_entitlements_store_unique").on(table.storeId),
+  stripeCustomerUnique: uniqueIndex("store_entitlements_stripe_customer_unique").on(table.stripeCustomerId),
+  stripeSubscriptionUnique: uniqueIndex("store_entitlements_stripe_subscription_unique").on(table.stripeSubscriptionId),
+}));
+
+export type StoreEntitlement = typeof storeEntitlements.$inferSelect;
+export type InsertStoreEntitlement = typeof storeEntitlements.$inferInsert;
+
+/** Nhật ký idempotent cho event billing; không lưu payload thanh toán thô hay thông tin thẻ. */
+export const billingWebhookEvents = mysqlTable("billingWebhookEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  provider: mysqlEnum("provider", ["stripe", "apple", "google_play"]).notNull(),
+  providerEventId: varchar("providerEventId", { length: 255 }).notNull(),
+  eventType: varchar("eventType", { length: 128 }).notNull(),
+  storeId: int("storeId"),
+  payloadHash: varchar("payloadHash", { length: 64 }).notNull(),
+  processingStatus: mysqlEnum("processingStatus", ["processed", "ignored", "failed"]).default("processed").notNull(),
+  processedAt: timestamp("processedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({ providerEventUnique: uniqueIndex("billing_webhook_provider_event_unique").on(table.provider, table.providerEventId) }));
+
+export type BillingWebhookEvent = typeof billingWebhookEvents.$inferSelect;
+export type InsertBillingWebhookEvent = typeof billingWebhookEvents.$inferInsert;
 
 /** Snapshot JSON giúp giữ toàn bộ nghiệp vụ offline hiện tại trong giai đoạn cloud MVP. */
 export const posSnapshots = mysqlTable("posSnapshots", {
