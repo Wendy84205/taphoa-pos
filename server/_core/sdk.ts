@@ -7,6 +7,7 @@ import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
 import { ENV } from "./env";
+import { parseOAuthState } from "../../shared/oauth-state";
 import type {
   ExchangeTokenRequest,
   ExchangeTokenResponse,
@@ -39,8 +40,9 @@ class OAuthService {
   }
 
   private decodeState(state: string): string {
-    const redirectUri = atob(state);
-    return redirectUri;
+    const parsed = parseOAuthState(state);
+    if (!parsed) throw new Error("OAuth state không hợp lệ.");
+    return parsed.redirectUri;
   }
 
   async getTokenByCode(code: string, state: string): Promise<ExchangeTokenResponse> {

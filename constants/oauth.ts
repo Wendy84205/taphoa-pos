@@ -1,9 +1,12 @@
 import * as Linking from "expo-linking";
+import * as Crypto from "expo-crypto";
+import * as SecureStore from "expo-secure-store";
 import * as ReactNative from "react-native";
+import { createOAuthState } from "@/shared/oauth-state";
 
 // Extract scheme from bundle ID (last segment timestamp, prefixed with "manus")
 // e.g., "space.manus.my.app.t20240115103045" -> "manus20240115103045"
-const bundleId = "com.app.taphoapos";
+const bundleId = "space.manus.taphoa.pos.t20260814120419";
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const schemeFromBundleId = `manus${timestamp}`;
 
@@ -51,17 +54,37 @@ export function getApiBaseUrl(): string {
 
 export const SESSION_TOKEN_KEY = "app_session_token";
 export const USER_INFO_KEY = "manus-runtime-user-info";
+const OAUTH_STATE_KEY = "taphoa_oauth_state";
 
-const encodeState = (value: string) => {
-  if (typeof globalThis.btoa === "function") {
-    return globalThis.btoa(value);
+async function savePendingOAuthState(state: string) {
+  if (ReactNative.Platform.OS === "web") {
+    window.sessionStorage.setItem(OAUTH_STATE_KEY, state);
+    return;
   }
-  const BufferImpl = (globalThis as Record<string, any>).Buffer;
-  if (BufferImpl) {
-    return BufferImpl.from(value, "utf-8").toString("base64");
+  await SecureStore.setItemAsync(OAUTH_STATE_KEY, state);
+}
+
+export async function getPendingOAuthState() {
+  if (ReactNative.Platform.OS === "web") return window.sessionStorage.getItem(OAUTH_STATE_KEY);
+  return SecureStore.getItemAsync(OAUTH_STATE_KEY);
+}
+
+export async function clearPendingOAuthState() {
+  if (ReactNative.Platform.OS === "web") {
+    window.sessionStorage.removeItem(OAUTH_STATE_KEY);
+    return;
   }
-  return value;
-};
+  await SecureStore.deleteItemAsync(OAUTH_STATE_KEY);
+}
+
+async function createWebOAuthState(redirectUri: string) {
+  const baseUrl = getApiBaseUrl().replace(/\/$/, "");
+  const response = await fetch(`${baseUrl}/api/oauth/state?redirectUri=${encodeURIComponent(redirectUri)}`, { credentials: "include" });
+  if (!response.ok) throw new Error("Không thể bắt đầu đăng nhập OAuth.");
+  const result = await response.json() as { state?: string };
+  if (!result.state) throw new Error("OAuth state không hợp lệ.");
+  return result.state;
+}
 
 /**
  * Get the redirect URI for OAuth callback.
@@ -78,9 +101,12 @@ export const getRedirectUri = () => {
   }
 };
 
-export const getLoginUrl = () => {
+export const getLoginUrl = async () => {
   const redirectUri = getRedirectUri();
-  const state = encodeState(redirectUri);
+  const state = ReactNative.Platform.OS === "web"
+    ? await createWebOAuthState(redirectUri)
+    : createOAuthState(redirectUri, Crypto.randomUUID().replace(/-/g, ""));
+  if (ReactNative.Platform.OS !== "web") await savePendingOAuthState(state);
 
   const url = new URL(`${OAUTH_PORTAL_URL}/app-auth`);
   url.searchParams.set("appId", APP_ID);
@@ -102,7 +128,7 @@ export const getLoginUrl = () => {
  * @returns Always null, the callback is handled via deep link.
  */
 export async function startOAuthLogin(): Promise<string | null> {
-  const loginUrl = getLoginUrl();
+  const loginUrl = await getLoginUrl();
 
   if (ReactNative.Platform.OS === "web") {
     // On web, just redirect

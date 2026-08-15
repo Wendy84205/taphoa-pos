@@ -10,6 +10,7 @@ import { useCloudSync } from "@/lib/cloud-sync-provider";
 import * as Auth from "@/lib/_core/auth";
 import { trpc } from "@/lib/trpc";
 import { exportJsonBackup, readJsonBackup } from "@/lib/export-files";
+import { parseJsonBackupContent } from "@/lib/backup-validation";
 import { usePosStore } from "@/lib/pos-store";
 import { startOAuthLogin } from "@/constants/oauth";
 
@@ -127,7 +128,7 @@ function LocalBackupManager({ getState, restoreState }: { getState: () => unknow
       const result = await DocumentPicker.getDocumentAsync({ type: "application/json", copyToCacheDirectory: true });
       if (result.canceled) return;
       const asset = result.assets[0];
-      const payload = Platform.OS === "web" && asset.file ? JSON.parse(await asset.file.text())?.payload : await readJsonBackup(asset.uri);
+      const payload = Platform.OS === "web" && asset.file ? parseJsonBackupContent(await asset.file.text()) : await readJsonBackup(asset.uri);
       if (!payload || typeof payload !== "object") throw new Error("Tệp backup không hợp lệ.");
       restoreState(payload);
       setMessage("Đã khôi phục dữ liệu trên thiết bị.");

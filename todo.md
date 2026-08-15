@@ -375,3 +375,14 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [ ] Hoàn thiện legal/compliance: điều khoản sử dụng, chính sách hoàn tiền, consent, hóa đơn/chứng từ và support contact.
 - [ ] Rà soát bảo mật sâu và regression Web/iOS/Android sau khi thêm entitlement, Stripe và Google OAuth.
 - [x] Hoàn tất code review, TypeScript, lint, regression, Web export và rà soát log/secret; dependency audit production cần chạy lại trên CI do sandbox hết bộ nhớ.
+
+## Security audit toàn diện
+
+- [x] Rà soát độc lập toàn bộ Web, backend và mobile: auth/session, tenant/role, input, export/file, offline/cloud sync, Stripe webhook, secret/log và Expo config.
+- [ ] Kiểm tra dependency vulnerability và bề mặt production/deployment bằng công cụ phù hợp với tài nguyên sandbox.
+- [x] Khắc phục lỗ hổng có thể tái hiện, thêm regression test và ghi báo cáo mức độ rủi ro còn lại.
+- [x] Xóa log client có token, Set-Cookie, response headers hoặc PII; giảm log OAuth callback nhạy cảm.
+- [x] Chặn OAuth callback nhận session token trực tiếp qua deep link và ràng buộc state/redirect URI theo allowlist.
+- [x] Kiểm tra giới hạn/khuôn dạng backup local trước restore và chặn payload có key nguy hiểm hoặc quá lớn.
+- [x] Reset/refetch cloud state theo user ID để không dùng cache snapshot tenant trước sau khi đổi tài khoản.
+- [x] Đồng bộ OAuth deep-link scheme với Expo config và thu hẹp bề mặt deep link không cần thiết.

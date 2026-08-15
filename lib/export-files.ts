@@ -5,6 +5,7 @@ import { Platform } from "react-native";
 import * as XLSX from "xlsx";
 
 import type { Order, Product } from "@/lib/pos-types";
+import { parseJsonBackupContent } from "@/lib/backup-validation";
 
 type ExportRow = Record<string, string | number | null | undefined>;
 
@@ -50,10 +51,11 @@ export async function exportJsonBackup(filename: string, payload: unknown) {
 }
 
 export async function readJsonBackup(uri: string) {
+  const info = await FileSystem.getInfoAsync(uri);
+  if (!info.exists) throw new Error("Không tìm thấy tệp backup.");
+  if (typeof info.size === "number" && info.size > 4 * 1024 * 1024) throw new Error("Backup vượt giới hạn 4MB.");
   const content = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.UTF8 });
-  const parsed = JSON.parse(content) as { format?: string; version?: number; payload?: unknown };
-  if (parsed.format !== "taphoa-pos-backup" || !parsed.payload) throw new Error("Tệp backup không đúng định dạng Tạp Hóa POS.");
-  return parsed.payload;
+  return parseJsonBackupContent(content);
 }
 
 function printWebHtml(html: string) {
