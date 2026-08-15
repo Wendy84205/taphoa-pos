@@ -360,3 +360,15 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Soạn checklist tài khoản Apple Developer/Google Play Console, signing, TestFlight/internal testing và submit.
 - [x] Thêm `eas.json` preview APK/production AAB, iOS build number `1`, Android versionCode `1` và target SDK `36`.
 - [ ] Hoàn tất release candidate checkpoint; người dùng xác nhận Publish/Build và submit trên các console.
+
+## Auth, trial và subscription production
+
+- [x] Lập báo cáo ma trận hiện trạng và cấu hình còn thiếu cho auth, trial, subscription/payment.
+- [ ] Cấu hình OAuth Google production cho Web, iOS và Android với redirect URI/domain/bundle ID chính thức.
+- [ ] Chọn và tích hợp xác thực số điện thoại/SMS OTP production, gồm anti-abuse, consent và chi phí gửi tin.
+- [ ] Thiết kế subscription model: gói, entitlement, trial 15 ngày, giới hạn và trạng thái hết hạn/grace period.
+- [ ] Tích hợp thanh toán Web tương thích Việt Nam và webhook xác thực server-side cho subscription.
+- [ ] Tích hợp In-App Purchase/StoreKit cho iOS và Google Play Billing cho Android khi bán digital subscription trong app.
+- [ ] Đồng bộ entitlement giữa Web/iOS/Android, gồm khôi phục giao dịch và auto-renew/cancel/refund.
+- [ ] Cấu hình database production cho user/subscription/payment event, idempotency, audit, webhook queue và reconciliation.
+- [ ] Hoàn thiện legal/compliance: điều khoản sử dụng, chính sách hoàn tiền, consent, hóa đơn/chứng từ và support contact.
