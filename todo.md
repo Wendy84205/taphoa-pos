@@ -337,3 +337,26 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [ ] Chạy tenant isolation authenticated trên staging khi có domain/database/account test.
 - [x] Hoàn thiện native build acceptance guide cho iPhone/Android; chờ người dùng cài build trực tiếp trên thiết bị thật.
 - [x] Chạy regression và export Web/iOS/Android sau adapter Redis; chờ checkpoint và GitHub.
+
+## Expo UI preview restart
+
+- [x] Khởi động lại Metro Expo tương thích SDK 54 và xác minh bundle giao diện.
+- [x] Xác nhận Expo Go tunnel sandbox không ổn định; không dùng URL Web preview để mở native app.
+
+## Xem giao diện Expo native
+
+- [x] Xác minh native bundle iOS/Android và cấu hình app cho native build trực tiếp.
+- [x] Cung cấp hướng dẫn mở đúng giao diện Expo native và phân biệt với Web preview/Expo Go tunnel.
+
+## Store release candidate
+
+- [x] Rà soát iOS/Android identifiers, version/build number, permissions và native release readiness; Expo Doctor đạt 18/18.
+- [x] Cài `expo-asset` peer dependency cho `expo-audio` và đồng bộ dependency patch với Expo SDK 54.0.36.
+- [x] Thêm plugin Expo Asset/Font/WebBrowser được Expo Doctor yêu cầu cho dynamic app config.
+- [x] Loại bỏ package-lock npm, đồng bộ pnpm-lock để EAS/CI dùng một package manager duy nhất.
+- [x] Chuẩn bị Data Safety/Privacy Nutrition Label draft và route/chính sách bảo mật public draft.
+- [x] Soạn metadata store tiếng Việt: tên, mô tả, keyword, category, thông tin hỗ trợ và release notes.
+- [ ] Chuẩn bị asset store: icon, screenshots iPhone/Android, feature graphic Android và preview guideline; cần native build/thiết bị thật.
+- [x] Soạn checklist tài khoản Apple Developer/Google Play Console, signing, TestFlight/internal testing và submit.
+- [x] Thêm `eas.json` preview APK/production AAB, iOS build number `1`, Android versionCode `1` và target SDK `36`.
+- [ ] Hoàn tất release candidate checkpoint; người dùng xác nhận Publish/Build và submit trên các console.
