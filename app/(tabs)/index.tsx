@@ -82,7 +82,7 @@ export default function PriceLookupScreen() {
       />
       {scannerVisible ? <BarcodeScannerModal visible onClose={() => setScannerVisible(false)} onScanned={handleBarcode} /> : null}
       {visionVisible ? <ProductVisionModal visible products={products} onClose={() => setVisionVisible(false)} onProductSelected={handleVisionProduct} /> : null}
-      <ProductEditorSheet visible={manualAddVisible || Boolean(quickAddBarcode)} presetBarcode={quickAddBarcode} onClose={() => { setManualAddVisible(false); setQuickAddBarcode(undefined); }} onSave={(draft) => { addProduct(draft); setQuery(draft.name); setNotice({ label: "Đã thêm sản phẩm vào danh mục", tone: "found" }); setManualAddVisible(false); setQuickAddBarcode(undefined); }} />
+      <ProductEditorSheet existingProducts={products} visible={manualAddVisible || Boolean(quickAddBarcode)} presetBarcode={quickAddBarcode} onClose={() => { setManualAddVisible(false); setQuickAddBarcode(undefined); }} onSave={(draft) => { addProduct(draft); setQuery(draft.name); setNotice({ label: "Đã thêm sản phẩm vào danh mục", tone: "found" }); setManualAddVisible(false); setQuickAddBarcode(undefined); }} />
     </ScreenContainer>
   );
 }

@@ -11,6 +11,7 @@ type Props = {
   presetBarcode?: string;
   onClose: () => void;
   onSave: (draft: ProductDraft) => void;
+  existingProducts?: Product[];
 };
 
 const blankDraft: ProductDraft = { name: "", price: 0, costPrice: undefined, unit: "cái", category: "Khác", barcode: "", imageUri: undefined, stockQuantity: 0, lowStockThreshold: 3 };
@@ -21,11 +22,12 @@ function toDraft(product?: Product, presetBarcode?: string): ProductDraft {
   return draft;
 }
 
-export function ProductEditorSheet({ visible, product, presetBarcode, onClose, onSave }: Props) {
+export function ProductEditorSheet({ visible, product, presetBarcode, onClose, onSave, existingProducts = [] }: Props) {
   const [draft, setDraft] = useState<ProductDraft>(toDraft(product, presetBarcode));
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (visible) setDraft(toDraft(product, presetBarcode));
+    if (visible) { setDraft(toDraft(product, presetBarcode)); setError(null); }
   }, [visible, product, presetBarcode]);
 
   const setTextField = (field: "name" | "unit" | "category" | "barcode", value: string) => setDraft((current) => ({ ...current, [field]: value }));
@@ -60,14 +62,12 @@ export function ProductEditorSheet({ visible, product, presetBarcode, onClose, o
   }
 
   function save() {
-    if (!draft.name.trim()) {
-      Alert.alert("Chưa có tên hàng", "Nhập tên sản phẩm để lưu.");
-      return;
-    }
-    if (draft.price <= 0) {
-      Alert.alert("Giá bán chưa hợp lệ", "Nhập giá bán lớn hơn 0 đồng.");
-      return;
-    }
+    if (!draft.name.trim()) { setError("Nhập tên sản phẩm để lưu."); return; }
+    if (draft.price <= 0) { setError("Giá bán phải lớn hơn 0 đồng."); return; }
+    if (draft.stockQuantity < 0 || draft.lowStockThreshold < 0) { setError("Tồn kho và ngưỡng cảnh báo không được âm."); return; }
+    const normalizedBarcode = draft.barcode?.trim();
+    if (normalizedBarcode && existingProducts.some((item) => item.id !== product?.id && item.barcode?.trim() === normalizedBarcode)) { setError("Mã vạch này đã có trong danh mục. Hãy kiểm tra lại hoặc để trống."); return; }
+    setError(null);
     const validExtras = extraUnits.filter((unit) => unit.label.trim() && unit.conversionToBase > 1 && unit.price > 0).map((unit) => ({ ...unit, label: unit.label.trim(), conversionToBase: Math.round(unit.conversionToBase), price: Math.round(unit.price) }));
     const baseUnit: ProductUnit = { id: "base", label: draft.unit.trim() || "cái", conversionToBase: 1, price: Math.round(draft.price), isBase: true };
     onSave({ ...draft, name: draft.name.trim(), unit: baseUnit.label, barcode: draft.barcode?.trim() || undefined, costPrice: draft.costPrice || undefined, units: validExtras.length ? [baseUnit, ...validExtras] : undefined });
@@ -104,7 +104,8 @@ export function ProductEditorSheet({ visible, product, presetBarcode, onClose, o
             <View style={styles.flex}><FormField label="Nhóm hàng" value={draft.category} onChangeText={(value) => setTextField("category", value)} placeholder="Ví dụ: Bánh kẹo" /></View>
           </View>
           <View style={styles.unitsCard}><View style={styles.unitsHeading}><View><Text style={styles.label}>Đơn vị quy đổi (bán sỉ)</Text><Text style={styles.help}>Tồn kho vẫn tính theo đơn vị cơ sở ở trên, ví dụ lốc 6 chai hoặc thùng 24 chai.</Text></View><TouchableOpacity onPress={addExtraUnit} style={styles.unitAdd}><MaterialIcons name="add" size={18} color="#1F7A4A" /><Text style={styles.unitAddText}>Thêm</Text></TouchableOpacity></View>{extraUnits.map((unit, index) => <View key={unit.id} style={styles.extraUnit}><View style={styles.unitInputs}><TextInput value={unit.label} onChangeText={(label) => updateExtraUnit(index, { label })} placeholder="Ví dụ: lốc 6 chai" placeholderTextColor="#8B968E" style={[styles.input, styles.unitName]} /><TextInput value={String(unit.conversionToBase || "")} onChangeText={(value) => updateExtraUnit(index, { conversionToBase: Number(value.replace(/\D/g, "")) || 0 })} placeholder="Quy đổi" placeholderTextColor="#8B968E" keyboardType="numeric" style={[styles.input, styles.unitCompact]} /><TextInput value={unit.price ? String(unit.price) : ""} onChangeText={(value) => updateExtraUnit(index, { price: Number(value.replace(/\D/g, "")) || 0 })} placeholder="Giá bán" placeholderTextColor="#8B968E" keyboardType="numeric" style={[styles.input, styles.unitPrice]} /></View><TouchableOpacity onPress={() => removeExtraUnit(index)} style={styles.unitDelete}><MaterialIcons name="close" size={18} color="#B5443E" /></TouchableOpacity></View>)}{extraUnits.length ? <Text style={styles.unitLegend}>Tên đơn vị · Số {draft.unit || "đơn vị cơ sở"} quy đổi · Giá bán</Text> : null}</View>
-          <FormField label="Mã vạch (tùy chọn)" value={draft.barcode ?? ""} onChangeText={(value) => setTextField("barcode", value)} placeholder="Quét hoặc nhập mã" keyboardType="numeric" />
+          <View style={styles.barcodeField}><FormField label="Mã vạch (tùy chọn)" value={draft.barcode ?? ""} onChangeText={(value) => { setError(null); setTextField("barcode", value); }} placeholder="Quét hoặc nhập mã" keyboardType="default" autoCapitalize="none" autoCorrect={false} /></View>
+          {error ? <View style={styles.errorCard} accessibilityRole="alert"><MaterialIcons name="error-outline" size={19} color="#A23B35" /><Text style={styles.errorText}>{error}</Text></View> : null}
           <View style={styles.twoColumns}>
             <View style={styles.flex}><FormField label="Tồn hiện tại" value={String(draft.stockQuantity)} onChangeText={(value) => setNumberField("stockQuantity", value)} placeholder="0" keyboardType="numeric" /></View>
             <View style={styles.flex}><FormField label="Cảnh báo khi còn" value={String(draft.lowStockThreshold)} onChangeText={(value) => setNumberField("lowStockThreshold", value)} placeholder="3" keyboardType="numeric" /></View>
@@ -120,5 +121,5 @@ function FormField({ label, ...inputProps }: { label: string } & React.Component
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7F7F2" }, header: { minHeight: 64, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: "#DFE5DF", backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }, iconButton: { padding: 10 }, title: { fontSize: 18, fontWeight: "800", color: "#1D2A23" }, saveButton: { backgroundColor: "#1F7A4A", minHeight: 40, paddingHorizontal: 16, borderRadius: 12, justifyContent: "center" }, saveText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" }, content: { padding: 20, gap: 14, paddingBottom: 44, alignSelf: "center", width: "100%", maxWidth: 720 }, imageRow: { padding: 14, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#DFE5DF", borderRadius: 16, flexDirection: "row", gap: 14 }, image: { width: 88, height: 88, borderRadius: 14, backgroundColor: "#E5EEE7" }, imagePlaceholder: { width: 88, height: 88, borderRadius: 14, backgroundColor: "#E5EEE7", alignItems: "center", justifyContent: "center" }, imageActions: { flex: 1, gap: 4, justifyContent: "center" }, row: { flexDirection: "row", gap: 8, marginTop: 8, flexWrap: "wrap" }, secondaryButton: { minHeight: 36, borderRadius: 10, borderWidth: 1, borderColor: "#B9CFBE", paddingHorizontal: 10, flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "center" }, secondaryText: { color: "#1F7A4A", fontSize: 13, fontWeight: "700" }, field: { gap: 7 }, label: { color: "#334139", fontSize: 14, fontWeight: "800" }, help: { color: "#6E7B71", fontSize: 13, lineHeight: 18 }, input: { minHeight: 48, paddingHorizontal: 14, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#C9D4CB", borderRadius: 12, color: "#1D2A23", fontSize: 16 }, twoColumns: { flexDirection: "row", gap: 12 }, flex: { flex: 1 }, unitsCard: { padding: 13, borderRadius: 15, backgroundColor: "#EEF5EF", gap: 10 }, unitsHeading: { flexDirection: "row", gap: 10, justifyContent: "space-between", alignItems: "flex-start" }, unitAdd: { minHeight: 34, paddingHorizontal: 9, borderRadius: 9, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", gap: 3 }, unitAddText: { color: "#1F7A4A", fontSize: 12, fontWeight: "900" }, extraUnit: { flexDirection: "row", alignItems: "center", gap: 7 }, unitInputs: { flex: 1, flexDirection: "row", gap: 6 }, unitName: { flex: 1, minHeight: 43, fontSize: 13, paddingHorizontal: 9 }, unitCompact: { width: 72, minHeight: 43, fontSize: 13, paddingHorizontal: 8 }, unitPrice: { width: 88, minHeight: 43, fontSize: 13, paddingHorizontal: 8 }, unitDelete: { width: 34, height: 34, borderRadius: 10, backgroundColor: "#FFF1EF", alignItems: "center", justifyContent: "center" }, unitLegend: { color: "#63806A", fontSize: 11, fontStyle: "italic" },
+  container: { flex: 1, backgroundColor: "#F7F7F2" }, errorCard: { padding: 12, borderRadius: 12, backgroundColor: "#FFF0EE", borderWidth: 1, borderColor: "#E6B4B0", flexDirection: "row", alignItems: "center", gap: 8 }, errorText: { flex: 1, color: "#8D302C", fontSize: 13, lineHeight: 18, fontWeight: "700" }, barcodeField: { flex: 1 }, header: { minHeight: 64, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: "#DFE5DF", backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }, iconButton: { padding: 10 }, title: { fontSize: 18, fontWeight: "800", color: "#1D2A23" }, saveButton: { backgroundColor: "#1F7A4A", minHeight: 40, paddingHorizontal: 16, borderRadius: 12, justifyContent: "center" }, saveText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" }, content: { padding: 20, gap: 14, paddingBottom: 44, alignSelf: "center", width: "100%", maxWidth: 720 }, imageRow: { padding: 14, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#DFE5DF", borderRadius: 16, flexDirection: "row", gap: 14 }, image: { width: 88, height: 88, borderRadius: 14, backgroundColor: "#E5EEE7" }, imagePlaceholder: { width: 88, height: 88, borderRadius: 14, backgroundColor: "#E5EEE7", alignItems: "center", justifyContent: "center" }, imageActions: { flex: 1, gap: 4, justifyContent: "center" }, row: { flexDirection: "row", gap: 8, marginTop: 8, flexWrap: "wrap" }, secondaryButton: { minHeight: 36, borderRadius: 10, borderWidth: 1, borderColor: "#B9CFBE", paddingHorizontal: 10, flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "center" }, secondaryText: { color: "#1F7A4A", fontSize: 13, fontWeight: "700" }, field: { gap: 7 }, label: { color: "#334139", fontSize: 14, fontWeight: "800" }, help: { color: "#6E7B71", fontSize: 13, lineHeight: 18 }, input: { minHeight: 48, paddingHorizontal: 14, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#C9D4CB", borderRadius: 12, color: "#1D2A23", fontSize: 16 }, twoColumns: { flexDirection: "row", gap: 12 }, flex: { flex: 1 }, unitsCard: { padding: 13, borderRadius: 15, backgroundColor: "#EEF5EF", gap: 10 }, unitsHeading: { flexDirection: "row", gap: 10, justifyContent: "space-between", alignItems: "flex-start" }, unitAdd: { minHeight: 34, paddingHorizontal: 9, borderRadius: 9, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", gap: 3 }, unitAddText: { color: "#1F7A4A", fontSize: 12, fontWeight: "900" }, extraUnit: { flexDirection: "row", alignItems: "center", gap: 7 }, unitInputs: { flex: 1, flexDirection: "row", gap: 6 }, unitName: { flex: 1, minHeight: 43, fontSize: 13, paddingHorizontal: 9 }, unitCompact: { width: 72, minHeight: 43, fontSize: 13, paddingHorizontal: 8 }, unitPrice: { width: 88, minHeight: 43, fontSize: 13, paddingHorizontal: 8 }, unitDelete: { width: 34, height: 34, borderRadius: 10, backgroundColor: "#FFF1EF", alignItems: "center", justifyContent: "center" }, unitLegend: { color: "#63806A", fontSize: 11, fontStyle: "italic" },
 });

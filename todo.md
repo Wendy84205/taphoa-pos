@@ -469,3 +469,11 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Sửa camera không hiển thị khi chọn Chụp ảnh bao bì.
 - [x] Bổ sung nút và form thêm sản phẩm thủ công ngay trong màn Tra giá.
 - [x] Chạy TypeScript, lint, test và Expo native config sau khi hoàn tất.
+
+## Thêm sản phẩm trên điện thoại
+
+- [x] Hoàn thiện form thêm sản phẩm mobile với tên, nhóm, đơn vị, giá bán, giá vốn, tồn kho, ngưỡng cảnh báo và mã vạch.
+- [x] Hỗ trợ chụp/chọn ảnh sản phẩm và lưu vào catalog local.
+- [x] Validate dữ liệu bắt buộc, giá/số lượng không âm và mã vạch không trùng.
+- [x] Cho phép mở form từ Tra giá và Tiện ích, sau khi lưu có thể tìm và thêm sản phẩm vào giỏ.
+- [x] Chạy TypeScript, lint và regression sau khi hoàn thiện.
