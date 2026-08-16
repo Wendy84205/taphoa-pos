@@ -483,3 +483,9 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Thêm nút quét mã vạch ngay cạnh trường mã trong ProductEditorSheet.
 - [x] Tự điền mã sau khi quét thành công, giữ nguyên mã khi hủy và chạy validation mã trùng trước khi lưu.
 - [x] Chạy TypeScript, lint và regression sau khi tích hợp.
+
+## Haptic khi quét mã vạch
+
+- [x] Thêm rung nhẹ khi barcode scanner nhận mã hợp lệ lần đầu.
+- [x] Không rung lặp khi cùng một mã phát nhiều callback và giữ fallback im lặng trên nền tảng không hỗ trợ.
+- [x] Chạy TypeScript, lint và regression sau khi tích hợp haptic.

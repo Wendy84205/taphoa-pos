@@ -1,7 +1,8 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { CameraView, type BarcodeScanningResult, type BarcodeType, useCameraPermissions } from "expo-camera";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BackHandler, Linking, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { BackHandler, Linking, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { normalizeBarcode, shouldAcceptBarcodeScan } from "@/lib/barcode-lookup";
@@ -52,6 +53,7 @@ export function BarcodeScannerModal({ visible, onClose, onScanned }: Props) {
     if (!barcode) return;
     scannedRef.current = true;
     setScanned(true);
+    if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
     void cameraRef.current?.pausePreview();
     onScanned(barcode);
   }
