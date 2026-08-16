@@ -463,3 +463,9 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Chẩn đoán lỗi camera khi chọn Chụp sản phẩm để tra giá.
 - [x] Sửa quyền camera, mount/unmount, nút chụp và fallback chọn ảnh nếu cần.
 - [x] Chạy kiểm tra TypeScript, lint, test và Expo native config sau bản sửa.
+
+## Camera bao bì và thêm sản phẩm thủ công
+
+- [x] Sửa camera không hiển thị khi chọn Chụp ảnh bao bì.
+- [x] Bổ sung nút và form thêm sản phẩm thủ công ngay trong màn Tra giá.
+- [x] Chạy TypeScript, lint, test và Expo native config sau khi hoàn tất.
