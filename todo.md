@@ -457,3 +457,9 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 ## Đồng bộ bản sửa Scan/Vision
 
 - [ ] Commit và push bản sửa nút đóng/back, vòng đời camera và Safe Area lên GitHub.
+
+## Lỗi camera tra giá sản phẩm
+
+- [x] Chẩn đoán lỗi camera khi chọn Chụp sản phẩm để tra giá.
+- [x] Sửa quyền camera, mount/unmount, nút chụp và fallback chọn ảnh nếu cần.
+- [x] Chạy kiểm tra TypeScript, lint, test và Expo native config sau bản sửa.
