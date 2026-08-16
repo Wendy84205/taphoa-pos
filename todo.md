@@ -453,3 +453,7 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Nâng cấp UX nhận diện sản phẩm bằng máy ảnh: chụp lại, chọn ảnh, loading, lỗi và xác nhận sản phẩm.
 - [x] Nâng cấp UX quét mã vạch: chống quét lặp, tra cứu mã chuẩn hóa, fallback nhập tay và đóng scanner.
 - [x] Chạy TypeScript, lint, test và xác minh native config sau khi sửa.
+
+## Đồng bộ bản sửa Scan/Vision
+
+- [ ] Commit và push bản sửa nút đóng/back, vòng đời camera và Safe Area lên GitHub.
