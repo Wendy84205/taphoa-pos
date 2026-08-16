@@ -11,7 +11,7 @@ import { hashPassword, normalizeEmail, normalizePhone, credentialsOpenId, valida
 import { validateSnapshotPayload } from "./snapshot-validation";
 import { getGoogleOAuthReadiness } from "./google-auth-config";
 import { createStripeBillingPortal, createStripeCheckout, parseBillingPlan, stripeBillingReady } from "./stripe-billing";
-import { identifyProductFromImage, productVisionInputSchema } from "./product-vision";
+import { identifyProductFromImage, ProductVisionTimeoutError, productVisionInputSchema } from "./product-vision";
 
 const snapshotSchema = z.record(z.string(), z.unknown()).superRefine((snapshot, ctx) => {
   const result = validateSnapshotPayload(snapshot);
@@ -152,7 +152,8 @@ export const appRouter = router({
       await requireActiveEntitlement(ctx.user.id);
       try {
         return await identifyProductFromImage(input);
-      } catch {
+      } catch (error) {
+        if (error instanceof ProductVisionTimeoutError) throw new TRPCError({ code: "TIMEOUT", message: "Nhận diện ảnh mất quá lâu. Hãy thử lại hoặc dùng quét mã vạch." });
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể nhận diện ảnh sản phẩm lúc này. Hãy thử lại hoặc dùng quét mã vạch." });
       }
     }),

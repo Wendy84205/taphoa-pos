@@ -507,3 +507,13 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Bổ sung accessibility labels/hints và kiểm tra tương phản, Dynamic Type/TalkBack.
 - [x] Chạy TypeScript, lint, regression tests và Expo native config sau tối ưu.
 - [x] Cập nhật checklist kiểm thử iPhone/Android thật.
+
+## Tối ưu logic giao diện và backend
+
+- [x] Rà soát luồng tra giá, quét mã, nhận diện ảnh, thêm sản phẩm và bán hàng.
+- [x] Rà soát loading, empty, error, retry, duplicate submit và trạng thái khi mất mạng.
+- [x] Rà soát backend auth, session, tenant isolation, role guard và audit metadata.
+- [x] Rà soát mutation bán hàng, tồn kho, công nợ, VietQR và đồng bộ để tránh ghi sai hoặc ghi trùng.
+- [x] Bổ sung hoặc sửa test cho các lỗi logic UI/backend phát hiện được.
+- [x] Chạy TypeScript, lint, regression tests, build server và Expo config.
+- [x] Cập nhật tài liệu và đồng bộ thay đổi lên GitHub.

@@ -3,6 +3,14 @@ import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
 
 const MAX_IMAGE_DATA_URL_CHARS = 1_600_000;
+const VISION_TIMEOUT_MS = 25_000;
+
+export class ProductVisionTimeoutError extends Error {
+  constructor() {
+    super("Vision request timed out");
+    this.name = "ProductVisionTimeoutError";
+  }
+}
 
 export const productVisionInputSchema = z.object({
   imageDataUrl: z
@@ -46,24 +54,33 @@ export function parseProductVisionResponse(raw: unknown): ProductVisionResult {
 }
 
 export async function identifyProductFromImage(input: ProductVisionInput): Promise<ProductVisionResult> {
-  const response = await invokeLLM({
-    model: "gemini-3-flash-preview",
-    maxTokens: 900,
-    responseFormat: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content: "Bạn nhận diện hàng hóa bán lẻ Việt Nam từ ảnh. Chỉ trích xuất các đặc điểm nhìn thấy, tuyệt đối không suy đoán giá. Nếu ảnh mờ, không thấy rõ bao bì hoặc không chắc chắn, đặt usable=false. Trả về JSON thuần theo dạng {usable:boolean, confidence:number, brand?:string, productName?:string, variant?:string, size?:string}. confidence từ 0 đến 1.",
-      },
-      {
-        role: "user",
-        content: [
-          { type: "text", text: "Ảnh này là một hàng hóa tại quán. Hãy nhận diện tên, thương hiệu, phiên bản và dung tích nếu nhìn thấy được." },
-          { type: "image_url", image_url: { url: input.imageDataUrl, detail: "low" } },
-        ],
-      },
-    ],
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => reject(new ProductVisionTimeoutError()), VISION_TIMEOUT_MS);
   });
+  let response;
+  try {
+    response = await Promise.race([invokeLLM({
+      model: "gemini-3-flash-preview",
+      maxTokens: 900,
+      responseFormat: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: "Bạn nhận diện hàng hóa bán lẻ Việt Nam từ ảnh. Chỉ trích xuất các đặc điểm nhìn thấy, tuyệt đối không suy đoán giá. Nếu ảnh mờ, không thấy rõ bao bì hoặc không chắc chắn, đặt usable=false. Trả về JSON thuần theo dạng {usable:boolean, confidence:number, brand?:string, productName?:string, variant?:string, size?:string}. confidence từ 0 đến 1.",
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Ảnh này là một hàng hóa tại quán. Hãy nhận diện tên, thương hiệu, phiên bản và dung tích nếu nhìn thấy được." },
+            { type: "image_url", image_url: { url: input.imageDataUrl, detail: "low" } },
+          ],
+        },
+      ],
+    }), timeout]);
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+  }
 
   const content = response.choices[0]?.message.content;
   if (typeof content !== "string") throw new Error("Vision returned an empty result");

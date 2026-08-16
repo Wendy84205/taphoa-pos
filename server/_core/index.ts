@@ -14,6 +14,7 @@ import { isDatabaseAvailable } from "../db";
 import {
   AUTH_RATE_LIMIT,
   PIN_RATE_LIMIT,
+  VISION_RATE_LIMIT,
   clientAddress,
   createConfiguredRateLimitStore,
   createRequestId,
@@ -104,7 +105,9 @@ export function createApp() {
       ? PIN_RATE_LIMIT
       : path.includes("credentialsLogin") || path.includes("credentialsRegister") || path.includes("requestPasswordReset") || path.includes("verifyPasswordResetOtp")
         ? AUTH_RATE_LIMIT
-        : undefined;
+        : path.includes("vision.identifyProduct")
+          ? VISION_RATE_LIMIT
+          : undefined;
     if (!policy) return next();
 
     let result;

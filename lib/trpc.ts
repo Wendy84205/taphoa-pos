@@ -51,11 +51,10 @@ export function createTRPCClient() {
             : undefined;
           const headers = new Headers(options?.headers);
           if (csrfToken) headers.set("x-csrf-token", decodeURIComponent(csrfToken));
-          return fetch(url, {
-            ...options,
-            headers,
-            credentials: "include",
-          });
+          if (options?.signal) return fetch(url, { ...options, headers, credentials: "include" });
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 30_000);
+          return fetch(url, { ...options, headers, credentials: "include", signal: controller.signal }).finally(() => clearTimeout(timeout));
         },
       }),
     ],

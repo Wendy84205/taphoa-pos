@@ -140,6 +140,7 @@ export function createConfiguredRateLimitStore(env: NodeJS.ProcessEnv = process.
 
 export const AUTH_RATE_LIMIT: RateLimitPolicy = { limit: 10, windowMs: 15 * 60 * 1000 };
 export const PIN_RATE_LIMIT: RateLimitPolicy = { limit: 8, windowMs: 15 * 60 * 1000 };
+export const VISION_RATE_LIMIT: RateLimitPolicy = { limit: 20, windowMs: 10 * 60 * 1000 };
 
 const SENSITIVE_FIELD = /password|pin|token|secret|cookie|authorization|snapshot|email|phone/i;
 
