@@ -32,12 +32,12 @@ export function ProductVisionModal({ visible, products, onClose, onProductSelect
       setCameraReady(false);
       setCaptured(null);
       setResult(null);
-      identify.reset();
     }
-  }, [identify, visible]);
+  }, [visible]);
 
   function close() {
     if (identify.isPending) return;
+    identify.reset();
     onClose();
   }
 
