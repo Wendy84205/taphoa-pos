@@ -517,3 +517,13 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Bổ sung hoặc sửa test cho các lỗi logic UI/backend phát hiện được.
 - [x] Chạy TypeScript, lint, regression tests, build server và Expo config.
 - [x] Cập nhật tài liệu và đồng bộ thay đổi lên GitHub.
+
+## Nâng cấp UI đẹp và nhất quán
+
+- [x] Rà soát visual system hiện tại và xác định màn hình UI ưu tiên.
+- [x] Chuẩn hóa theme, màu sắc, typography, spacing, radius và shadow.
+- [x] Redesign màn Tra giá và các thẻ thao tác chính.
+- [x] Redesign màn Bán hàng, giỏ hàng và khu vực thanh toán.
+- [x] Redesign modal scanner, vision, thêm sản phẩm và các trạng thái thao tác.
+- [x] Đồng bộ loading, error, empty, success và accessibility theo visual system mới.
+- [x] Chạy regression, kiểm tra responsive native và cập nhật GitHub.
