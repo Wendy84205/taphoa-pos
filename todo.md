@@ -477,3 +477,9 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Validate dữ liệu bắt buộc, giá/số lượng không âm và mã vạch không trùng.
 - [x] Cho phép mở form từ Tra giá và Tiện ích, sau khi lưu có thể tìm và thêm sản phẩm vào giỏ.
 - [x] Chạy TypeScript, lint và regression sau khi hoàn thiện.
+
+## Quét mã vạch trong form thêm sản phẩm
+
+- [x] Thêm nút quét mã vạch ngay cạnh trường mã trong ProductEditorSheet.
+- [x] Tự điền mã sau khi quét thành công, giữ nguyên mã khi hủy và chạy validation mã trùng trước khi lưu.
+- [x] Chạy TypeScript, lint và regression sau khi tích hợp.
