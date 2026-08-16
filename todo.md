@@ -489,3 +489,11 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Thêm rung nhẹ khi barcode scanner nhận mã hợp lệ lần đầu.
 - [x] Không rung lặp khi cùng một mã phát nhiều callback và giữ fallback im lặng trên nền tảng không hỗ trợ.
 - [x] Chạy TypeScript, lint và regression sau khi tích hợp haptic.
+
+## Âm thanh và toast khi quét mã
+
+- [x] Thêm tùy chọn bật/tắt âm thanh bíp khi quét mã vạch thành công.
+- [x] Thêm toast xác nhận trực quan có tên/mã sản phẩm và tự biến mất.
+- [x] Giữ haptic hiện tại, không phát bíp hoặc toast lặp khi camera double-fire.
+- [x] Chạy TypeScript, lint, regression và Expo native config.
+- [x] Commit và push toàn bộ thay đổi âm thanh/toast lên GitHub.

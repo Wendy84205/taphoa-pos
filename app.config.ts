@@ -30,6 +30,7 @@ const config: ExpoConfig = {
     "expo-asset",
     "expo-font",
     "expo-web-browser",
+    "expo-audio",
     "./plugins/with-lan-cleartext",
     "expo-document-picker",
     ["expo-camera", { cameraPermission: "Cho phép $(PRODUCT_NAME) dùng camera để quét mã và nhận diện sản phẩm." }],
