@@ -66,9 +66,11 @@ export default function RootLayout() {
   );
   const [trpcClient] = useState(() => createTRPCClient());
 
-  // Ensure minimum 8px padding for top and bottom on mobile
+  // Native devices report their real notch/home-indicator insets. Only the Web preview
+  // needs a small fallback because it does not have native window metrics.
   const providerInitialMetrics = useMemo(() => {
     const metrics = initialWindowMetrics ?? { insets: initialInsets, frame: initialFrame };
+    if (Platform.OS !== "web") return metrics;
     return {
       ...metrics,
       insets: {

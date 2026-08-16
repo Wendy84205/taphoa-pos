@@ -67,7 +67,11 @@ export function BarcodeScannerModal({ visible, onClose, onScanned }: Props) {
     if (!barcode) return;
     scannedRef.current = true;
     setScanned(true);
-    if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+    if (Platform.OS === "ios") {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    } else if (Platform.OS === "android") {
+      void Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Confirm).catch(() => undefined);
+    }
     if (soundEnabled) {
       try {
         beepPlayer.seekTo(0);
@@ -86,10 +90,10 @@ export function BarcodeScannerModal({ visible, onClose, onScanned }: Props) {
 
   if (!visible) return null;
 
-  return <Modal visible animationType="slide" onRequestClose={close} presentationStyle="fullScreen" statusBarTranslucent>
+  return <Modal visible animationType="slide" onRequestClose={close} presentationStyle="fullScreen" statusBarTranslucent hardwareAccelerated={Platform.OS === "android"}>
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
-        <Pressable onPress={close} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]} accessibilityRole="button" accessibilityLabel="Đóng quét mã vạch"><MaterialIcons name="close" size={26} color="#FFFFFF" /></Pressable>
+                  <Pressable onPress={close} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]} accessibilityRole="button" accessibilityLabel="Đóng quét mã vạch" accessibilityHint="Quay lại màn tra giá"><MaterialIcons name="close" size={26} color="#FFFFFF" /></Pressable>
         <View style={styles.headerCopy}><Text style={styles.headerTitle}>Quét mã vạch</Text><Text style={styles.headerSub}>Tra trong hàng hóa của quán</Text></View>
         <View style={styles.iconButton} />
       </View>

@@ -497,3 +497,13 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Giữ haptic hiện tại, không phát bíp hoặc toast lặp khi camera double-fire.
 - [x] Chạy TypeScript, lint, regression và Expo native config.
 - [x] Commit và push toàn bộ thay đổi âm thanh/toast lên GitHub.
+
+## Tối ưu giao diện iOS và Android
+
+- [x] Rà soát toàn bộ màn hình, modal và component theo khác biệt iOS/Android.
+- [x] Tối ưu Safe Area, tab bar, modal sheet, nút back và vùng thao tác một tay.
+- [x] Tối ưu bàn phím, TextInput, font scale và kích thước hit target trên hai nền tảng.
+- [x] Tối ưu scanner/camera controls, haptic, âm thanh và trạng thái lỗi theo native platform.
+- [x] Bổ sung accessibility labels/hints và kiểm tra tương phản, Dynamic Type/TalkBack.
+- [x] Chạy TypeScript, lint, regression tests và Expo native config sau tối ưu.
+- [x] Cập nhật checklist kiểm thử iPhone/Android thật.

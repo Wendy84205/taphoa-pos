@@ -2,7 +2,8 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BackHandler, Alert, Image, Linking, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { BackHandler, Alert, Image, Linking, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { trpc } from "@/lib/trpc";
@@ -77,6 +78,7 @@ export function ProductVisionModal({ visible, products, onClose, onProductSelect
     if (cameraError || !cameraReady || !cameraRef.current) return;
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.55, base64: true, exif: false, skipProcessing: false });
+      if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
       setImage(photo.uri, photo.base64);
     } catch {
       setCameraError("Không thể chụp ảnh từ camera. Hãy thử lại hoặc chọn ảnh từ thư viện.");
@@ -110,12 +112,13 @@ export function ProductVisionModal({ visible, products, onClose, onProductSelect
   }
 
   function selectProduct(product: Product) {
+    if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     onProductSelected(product);
     onClose();
   }
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={close} presentationStyle="fullScreen">
+    <Modal visible={visible} animationType="slide" onRequestClose={close} presentationStyle="fullScreen" statusBarTranslucent hardwareAccelerated={Platform.OS === "android"}>
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: Math.max(insets.top, 8) }]}>
           <Pressable onPress={close} style={styles.headerButton} accessibilityRole="button" accessibilityLabel="Đóng nhận diện sản phẩm"><MaterialIcons name="close" size={25} color="#FFFFFF" /></Pressable>
@@ -162,7 +165,7 @@ export function ProductVisionModal({ visible, products, onClose, onProductSelect
               <View pointerEvents="none" style={styles.cameraOverlay}><View style={styles.frame} /><Text style={styles.frameHint}>Đưa trọn mặt trước bao bì vào khung</Text></View>
               <View style={[styles.cameraControls, { paddingBottom: Math.max(insets.bottom + 12, 22) }]}>
                 <Pressable onPress={pickImage} style={styles.libraryButton} accessibilityRole="button" accessibilityLabel="Chọn ảnh từ thư viện"><MaterialIcons name="photo-library" size={22} color="#FFFFFF" /><Text style={styles.libraryText}>Chọn ảnh</Text></Pressable>
-                <Pressable onPress={takePicture} disabled={!cameraReady} style={[styles.captureButton, !cameraReady && styles.buttonDisabled]} accessibilityRole="button" accessibilityLabel="Chụp ảnh sản phẩm"><View style={styles.captureInner} /></Pressable>
+                <Pressable onPress={takePicture} disabled={!cameraReady} style={[styles.captureButton, !cameraReady && styles.buttonDisabled]} accessibilityRole="button" accessibilityLabel="Chụp ảnh sản phẩm" accessibilityHint="Chụp mặt trước bao bì để tra giá"><View style={styles.captureInner} /></Pressable>
                 <View style={styles.libraryButton}><MaterialIcons name="privacy-tip" size={20} color="#CBE9D8" /><Text style={styles.libraryText}>Không lưu ảnh</Text></View>
               </View>
             </>}
