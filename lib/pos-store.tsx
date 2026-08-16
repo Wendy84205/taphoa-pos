@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { findByBarcode } from "@/lib/barcode-lookup";
 import { calculateSubtotal, calculateTotal } from "@/lib/pos-calculations";
 import { calculateBestDiscount } from "@/lib/promotions";
 import { importProductsIntoCatalog } from "@/lib/product-import";
@@ -171,7 +172,7 @@ export function PosStoreProvider({ children }: { children: ReactNode }) {
       if (method === "bank_transfer") dispatch({ type: "RECONCILE_TRANSFER", payload: { id: `transfer-${Date.now()}`, orderId: order.id, amountExpected: order.totalAmount, status: "pending", createdAt: order.createdAt } });
       return order;
     },
-    getProductByBarcode: (barcode) => state.products.find((product) => product.barcode === barcode),
+    getProductByBarcode: (barcode) => findByBarcode(state.products, barcode),
     replaceRemoteSnapshot: (products, orders) => dispatch({ type: "REPLACE_REMOTE_SNAPSHOT", payload: { products, orders } }),
     replaceRemoteState: (payload) => dispatch({ type: "REPLACE_REMOTE_STATE", payload }),
     importProducts: (drafts) => { const imported = importProductsIntoCatalog(state.products, drafts); const activities = imported.products.flatMap((product) => { const previous = state.products.find((candidate) => candidate.id === product.id); if (!previous) return [createActivity(product, "import", 0, product.stockQuantity, "Nhập từ tệp Excel/CSV")]; const change = product.stockQuantity - previous.stockQuantity; return change !== 0 ? [createActivity(product, "import", previous.stockQuantity, change, "Cập nhật từ tệp Excel/CSV")] : []; }); dispatch({ type: "IMPORT_PRODUCTS", payload: imported.products, activities }); return { added: imported.added, updated: imported.updated }; },

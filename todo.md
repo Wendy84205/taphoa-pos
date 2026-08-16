@@ -440,3 +440,16 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Kiểm tra giới hạn/khuôn dạng backup local trước restore và chặn payload có key nguy hiểm hoặc quá lớn.
 - [x] Reset/refetch cloud state theo user ID để không dùng cache snapshot tenant trước sau khi đổi tài khoản.
 - [x] Đồng bộ OAuth deep-link scheme với Expo config và thu hẹp bề mặt deep link không cần thiết.
+
+## Khôi phục bản sửa sau workspace reset
+
+- [ ] Khôi phục bản sửa runtime Vision và Barcode đã mất trước khi commit.
+- [ ] Chạy test/regression và push commit khôi phục lên GitHub.
+
+## Sửa lỗi Scan và nâng cấp camera
+
+- [x] Sửa lỗi không thể quay lại sau khi mở Scan/chụp sản phẩm trên iPhone/Android.
+- [x] Ổn định vòng đời camera, nút đóng và nút back hệ thống cho nhận diện ảnh và barcode scanner.
+- [x] Nâng cấp UX nhận diện sản phẩm bằng máy ảnh: chụp lại, chọn ảnh, loading, lỗi và xác nhận sản phẩm.
+- [x] Nâng cấp UX quét mã vạch: chống quét lặp, tra cứu mã chuẩn hóa, fallback nhập tay và đóng scanner.
+- [x] Chạy TypeScript, lint, test và xác minh native config sau khi sửa.

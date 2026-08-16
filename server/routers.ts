@@ -11,6 +11,7 @@ import { hashPassword, normalizeEmail, normalizePhone, credentialsOpenId, valida
 import { validateSnapshotPayload } from "./snapshot-validation";
 import { getGoogleOAuthReadiness } from "./google-auth-config";
 import { createStripeBillingPortal, createStripeCheckout, parseBillingPlan, stripeBillingReady } from "./stripe-billing";
+import { identifyProductFromImage, productVisionInputSchema } from "./product-vision";
 
 const snapshotSchema = z.record(z.string(), z.unknown()).superRefine((snapshot, ctx) => {
   const result = validateSnapshotPayload(snapshot);
@@ -143,6 +144,16 @@ export const appRouter = router({
         return await createStripeBillingPortal({ storeId: workspace.store.id });
       } catch (error) {
         throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Chưa có Stripe subscription để quản lý." });
+      }
+    }),
+  }),
+  vision: router({
+    identifyProduct: protectedProcedure.input(productVisionInputSchema).mutation(async ({ ctx, input }) => {
+      await requireActiveEntitlement(ctx.user.id);
+      try {
+        return await identifyProductFromImage(input);
+      } catch {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể nhận diện ảnh sản phẩm lúc này. Hãy thử lại hoặc dùng quét mã vạch." });
       }
     }),
   }),
