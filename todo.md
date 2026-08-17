@@ -527,3 +527,10 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Redesign modal scanner, vision, thêm sản phẩm và các trạng thái thao tác.
 - [x] Đồng bộ loading, error, empty, success và accessibility theo visual system mới.
 - [x] Chạy regression, kiểm tra responsive native và cập nhật GitHub.
+
+## CSV danh mục giá hàng tạp hóa
+
+- [x] Xác định cột CSV tương thích trực tiếp với chức năng nhập sản phẩm của POS.
+- [x] Thu thập giá bán lẻ thị trường cho nhóm hàng thiết yếu và ghi rõ ngày tham khảo.
+- [x] Xây dựng giá vốn tham khảo, giá bán đề xuất và biên lợi nhuận mục tiêu theo từng quy cách.
+- [x] Tạo, kiểm tra tính hợp lệ và bàn giao CSV UTF-8 để nhập vào POS.

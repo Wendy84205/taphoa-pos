@@ -25,7 +25,7 @@ const HEADER_ALIASES: Record<keyof ProductDraft, string[]> = {
 };
 
 function normalizeHeader(value: unknown) {
-  return String(value ?? "").trim().toLocaleLowerCase("vi-VN").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_\-]/g, " ").replace(/\s+/g, " ");
+  return String(value ?? "").trim().toLocaleLowerCase("vi-VN").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/[_\-]/g, " ").replace(/\s+/g, " ");
 }
 
 function numeric(value: unknown, fallback = 0) {
@@ -87,7 +87,7 @@ export function previewProductImport(rows: SpreadsheetRow[], fileName: string): 
 }
 
 export function readProductSpreadsheet(buffer: ArrayBuffer, fileName: string): ProductImportPreview {
-  const workbook = XLSX.read(buffer, { type: "array", cellDates: false });
+  const workbook = XLSX.read(buffer, { type: "array", cellDates: false, codepage: 65001 });
   const firstSheetName = workbook.SheetNames[0];
   if (!firstSheetName) return { rows: [], issues: [{ rowNumber: 0, message: "Tệp không có trang dữ liệu." }], fileName };
   const rows = XLSX.utils.sheet_to_json<SpreadsheetRow>(workbook.Sheets[firstSheetName], { defval: "", raw: false });

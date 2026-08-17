@@ -36,4 +36,13 @@ describe("nhập sản phẩm hàng loạt", () => {
     expect(preview.rows).toHaveLength(1);
     expect(preview.rows[0]).toMatchObject({ name: "Mì Excel", price: 6500, stockQuantity: 14 });
   });
+
+  it("đọc đúng CSV UTF-8 có tiêu đề và dữ liệu tiếng Việt", () => {
+    const source = new TextEncoder().encode("Tên sản phẩm,Giá bán,Giá vốn,Đơn vị,Nhóm hàng,Tồn kho\nNước mắm thử,32000,27500,chai,Gia vị,12\n");
+    const buffer = source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength);
+    const preview = readProductSpreadsheet(buffer, "san-pham-utf8.csv");
+    expect(preview.issues).toHaveLength(0);
+    expect(preview.rows).toHaveLength(1);
+    expect(preview.rows[0]).toMatchObject({ name: "Nước mắm thử", price: 32000, costPrice: 27500, unit: "chai", category: "Gia vị", stockQuantity: 12 });
+  });
 });
