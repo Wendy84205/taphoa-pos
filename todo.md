@@ -534,3 +534,20 @@ Phiên bản Web sẽ dùng lớp vỏ này; native vẫn giữ bottom tabs và 
 - [x] Thu thập giá bán lẻ thị trường cho nhóm hàng thiết yếu và ghi rõ ngày tham khảo.
 - [x] Xây dựng giá vốn tham khảo, giá bán đề xuất và biên lợi nhuận mục tiêu theo từng quy cách.
 - [x] Tạo, kiểm tra tính hợp lệ và bàn giao CSV UTF-8 để nhập vào POS.
+
+## Nạp catalog CSV và tối ưu vận hành
+
+- [ ] Rà soát dữ liệu khởi tạo, store và luồng import catalog hiện có.
+- [ ] Nạp 110 sản phẩm CSV vào catalog mặc định mà không ghi đè catalog người dùng đã tạo.
+- [ ] Thêm cơ chế phiên bản danh mục để người dùng cũ có thể chủ động nạp danh mục mới an toàn.
+- [ ] Tối ưu UI tìm kiếm, lọc và hiển thị danh mục lớn cho thao tác tại quầy.
+- [ ] Tối ưu backend/cloud sync để hạn chế ghi trùng và giảm payload catalog lớn.
+- [ ] Bổ sung kiểm thử import, migration catalog và đồng bộ; chạy regression đầy đủ.
+- [ ] Lưu checkpoint và đồng bộ GitHub phiên bản catalog mới.
+
+## Khắc phục lỗi UI sau redesign
+
+- [x] Tái hiện lỗi runtime tại màn Tra giá sau bản cải thiện UI.
+- [x] Xác định thay đổi render/style gây lỗi và khôi phục luồng ổn định.
+- [x] Kiểm thử Tra giá, scanner và Bán hàng sau bản sửa.
+- [x] Đồng bộ bản sửa UI lên GitHub.
